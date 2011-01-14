@@ -50,7 +50,7 @@ cv.WaitKey()
 #rotate using PIL
 start = time.time()
 #pil_img1 = pil_img1.rotate(90, expand=True)
-print pil_img1.size
+#print pil_img1.size
 
 pil_img1 = pil_img1.rotate(27)
 #pil_img2 = pil_img1.rotate(46)
