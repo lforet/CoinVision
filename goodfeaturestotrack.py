@@ -60,20 +60,20 @@ for (x,y) in cv.GoodFeaturesToTrack(img, eig_image, temp_image, 10, 0.04, 1.0, u
 # wait some key to end
 
 img = cv.LoadImageM(sys.argv[1], cv.CV_LOAD_IMAGE_GRAYSCALE)
-(keypoints, descriptors) = cv.ExtractSURF(img, None, cv.CreateMemStorage(), (0, 1000, 4, 1))
+(keypoints, descriptors) = cv.ExtractSURF(img, None, cv.CreateMemStorage(), (0, 10000, 4, 1))
 print len(keypoints), len(descriptors)
 
 for ((x, y), laplacian, size, dir, hessian) in keypoints:
 	print "x=%d y=%d laplacian=%d size=%d dir=%f hessian=%f" % (x, y, laplacian, size, dir, hessian)
 	cv.Circle(img, (x,y), size, (255,0,0),1, cv.CV_AA , 0)
 
-(keypoints, descriptors) = cv.ExtractSURF(cv_im, None, cv.CreateMemStorage(), (0, 1000, 4, 1))
+(keypoints, descriptors) = cv.ExtractSURF(cv_im, None, cv.CreateMemStorage(), (0, 10000, 4, 1))
 print len(keypoints), len(descriptors)
 for ((x, y), laplacian, size, dir, hessian) in keypoints:
 	print "x=%d y=%d laplacian=%d size=%d dir=%f hessian=%f" % (x, y, laplacian, size, dir, hessian)
-
+	cv.Circle(cv_im, (x,y), size, (255,0,0),1, cv.CV_AA , 0)
 cv.ShowImage("SURF", img)
-
+cv.ShowImage("Rotated", cv_im)
 
 stor = cv.CreateMemStorage()
 seq = cv.FindContours(canny_image, stor, cv.CV_RETR_LIST, cv.CV_CHAIN_APPROX_SIMPLE)

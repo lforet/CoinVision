@@ -1,7 +1,7 @@
 import serial
 import time
 
-serial_port = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, timeout=None)
+serial_port = serial.Serial(port='/dev/ttyUSB1', baudrate=115200, timeout=None)
 serial_port.open()
 print serial_port.isOpen()
 
@@ -12,40 +12,17 @@ print 'Connected to: ', serial_port.portstr
 time.sleep(2)
 print "sending command"
 
-def Relay_ON(relay):
-	if relay == "01":
-		#set relay to listen
-		serial_port.write(chr(0x5C))
-		#set relay #2 OFF
-		serial_port.write(chr(0x65))
-		#set relay #1 ON
-		serial_port.write(chr(0x70))
-	if relay == "10":
-		#set relay to listen
-		serial_port.write(chr(0x5C))
-		#set relay #1 OFF
-		serial_port.write(chr(0x6F))
-		#set relay #2 ON
-		serial_port.write(chr(0x66))	
-	if relay == "11":
-		#set relay to listen
-		serial_port.write(chr(0x5C))
-		#set both relays ON
-		serial_port.write(chr(0x65))
-		serial_port.write(chr(0x65))
-	if relay == "00":
-		#set relay to listen
-		serial_port.write(chr(0x5C))
-		#set both relays OFF
-		serial_port.write(chr(0x70))
-		serial_port.write(chr(0x6F))
+def arm_move(move):
+	if move == "straight_up":
+		serial_port.write ('#1 P1300 #2 P1300 #3 P600 #4 P1630 T1500\r\n')
+	if move == "inital_position_1":
+		serial_port.write ('#0 P1750 #1 P1100 #2 P1100 #3 P1500 #4 P550 #5 P 1850 T1500\r\n')
+	if move == "safety_position_1":
+		serial_port.write ('#0 P1750 #1 P575 #2 P575 #3 P2050 #4 P1630 T1500\r\n')
 
+def arm_pause(secs):
+	time.sleep(secs)
 
-def Relay_Status():
-	serial_port.write(chr(0x5B))
-	serial_data = serial_port.read(1)
-	result = int(ord(serial_data[0]))
-	return result
 
 while 1:
 	 firmware = ''
@@ -87,7 +64,7 @@ while 1:
 
 		serial_port.write ('#5 P700\r\n')
 		time.sleep(.8)
-		serial_port.write ('#1 P1650 #2 P1650 #3 P1600 #4 P1300 T400\r\n')
+		serial_port.write ('#1 P1650 #2 P1650 #3 P1600 #4 P1150 T400\r\n')
 		time.sleep(.3)
 		serial_port.write ('#3 P1500 #4 P1200 #5 P700 \r\n')
 		time.sleep(.5)
@@ -101,7 +78,7 @@ while 1:
 		time.sleep(.2)
 		serial_port.write ('#5 P1900\r\n')
 		time.sleep(1)
-		serial_port.write ('#1 P1675 #2 P1675 #3 P1650 #4 P1100 T1000 \r\n')
+		serial_port.write ('#1 P1675 #2 P1675 #3 P1650 #4 P1300 T1400 \r\n')
 		time.sleep(.4)
 		serial_port.write ('#1 P1400 #2 P1400 #3 P1250 #4 P550 T200\r\n')
 		time.sleep(.5)
@@ -110,8 +87,8 @@ while 1:
 		serial_port.write ('#0 P1850 T1000\r\n')
 		time.sleep(1.5)
 		serial_port.write ('#0 P1750 #1 P1100 #2 P1100 #3 P1500 #4 P550 #5 P 1900 T1500\r\n')
-		time.sleep(1)
-		serial_port.write ('#0 P1850 #1 P1100 #2 P1100 #3 P1100 #4 P1000 T1500\r\n')
+		time.sleep(.8)
+		serial_port.write ('#0 P1850 #1 P1050 #2 P1050 #3 P1000 #4 P1000 T1500\r\n')
 		time.sleep(1)
 		serial_port.write ('#1 P1350 #2 P1350 #3 P1000 T1000\r\n')
 		time.sleep(1)
