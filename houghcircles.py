@@ -3,6 +3,7 @@ from opencv import cv
 from opencv import highgui
 from opencv.cv import *
 from opencv.highgui import *
+import Image
 
 pos1 = 0
 pos2 = 0
@@ -16,8 +17,6 @@ wname = "Find Circles"
 
 def on_trackbar1(position):
 	global pos1 
-	pos1 = int(pos2/2)
-	highgui.cvSetTrackbarPos("Canny1", wname, pos1)
 	global pos2
 	global pos3
 	global pos4
@@ -27,13 +26,12 @@ def on_trackbar1(position):
 	global img
 	global gray
 	global edges
-	#print position, pos2, pos3, pos4, pos5, pos6
+	print position, pos2, pos3, pos4, pos5, pos6, pos7
+
 	temp = cv.cvCloneImage(img)
 	gray = cv.cvCreateImage(cv.cvGetSize(temp), 8, 1)	
 	edges = cv.cvCreateImage(cv.cvGetSize(temp), 8, 1)
 	dst =  cv.cvCreateImage( cv.cvSize(256,256), 8, 3 )
-	print "this...", cv.cvGetSize(temp)
-	print "trying to print size)", cv.cvGetSize(dst)
 
 	src = cv.cvCloneImage(img)
 	src2 = cv.cvCreateImage( cv.cvGetSize(src), 8, 3 );
@@ -56,28 +54,49 @@ def on_trackbar1(position):
 			if radius > 200:
 				cv.cvCircle(temp ,(center), 2, cv.CV_RGB(0, 0, 255), 3, cv.CV_AA, 0 ) 	
 				cv.cvCircle(temp ,(center), (radius - pos7), cv.CV_RGB(0, 0, 255), 3, cv.CV_AA, 0 ) 
-				cvLogPolar( src, dst, (center), pos7, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS )	
-				img_size = cvGetSize(dst)
-				print "image sizes", img_size
-				cropped = cv.cvCreateImage( img_size, 8, 3)
-				
-				coin_edge_img = cv.cvGetSubRect(dst, cv.cvRect(0, (img_size[0]-pos7), 10, img_size_img[1]) )
+				cvLogPolar(src, dst, (center), 48, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS )
 
-#cvCopy(src_region, cropped)		
-			
+				img_size = cvGetSize(dst)
+				pos7 = int(pos7 /2.5)
+				#cv.cvCircle(dst  ,(img_size.width-pos7, 0), 2, cv.CV_RGB(0, 0, 255), 3, cv.CV_AA, 0 )
+				cv.cvLine(dst, (img_size.width-pos7-1, 0), (img_size.width-pos7-1, img_size.height), cv.CV_RGB(0, 0, 255),1,8,0)
+				cvShowImage( "log-polar", dst )
+				
+				
+				print radius, (radius-pos7)
+				
+				cropped = cv.cvCreateImage( (pos7, img_size.height), 8, 3)
+				cropped2 = cv.cvCreateImage( (pos7, img_size.height), 8, 3)
+				
+				coin_edge_img = cv.cvGetSubRect(dst, (img_size.width-pos7, 0, pos7 ,img_size.height ))
+				cvCopy(coin_edge_img, cropped)
+				cvSaveImage("temp.png", cropped)
+				im = Image.open("temp.png").rotate(90)
+				print "pil image size = ", im.size[0], im.size[1]
+				im = im.resize((im.size[0]*2, im.size[1]*2))
+				#print "pil image size = ", im.size
+				#im.show()
+				im.save("temp2.png")
+				cropped2 = highgui.cvLoadImage("temp2.png")
+                                cvShowImage( "cropped", cropped2)
+
 	except:
-		print sys.exc_info()[0]
+		print sys.exc_info()[0] 
 		print position, pos2, pos3, pos4, pos5, pos6
 		pass
 
 	highgui.cvShowImage("edges", edges)
 	cvShowImage( "log-polar", dst )
-	highgui.cvShowImage(wname, temp)
+	cvShowImage(wname, temp)
+	#cvShowImage( "cropped", cropped2)
 	
 
 def on_trackbar2(position):
 	global pos2 
+	global pos1 
 	pos2 = position
+	pos1 = int(pos2/2)
+	highgui.cvSetTrackbarPos("Canny1", wname, pos1)
 	on_trackbar1(pos1)
 
 def on_trackbar3(position):
@@ -125,7 +144,7 @@ if __name__ == "__main__":
 	img = highgui.cvLoadImage(sys.argv[1])
 	#highgui.cvShowImage("Image", img)
 
-	highgui.cvCreateTrackbar("Canny1", wname, 50, 250, on_trackbar1)
+	highgui.cvCreateTrackbar("Canny1", wname, 87, 250, on_trackbar1)
 	highgui.cvCreateTrackbar("Canny2", wname, 175, 250, on_trackbar2)
 	highgui.cvCreateTrackbar("minDistance", wname, 40, 150, on_trackbar3)
 	highgui.cvCreateTrackbar("accumThresh", wname, 55, 100, on_trackbar4)
@@ -140,7 +159,9 @@ if __name__ == "__main__":
 	pos6 = highgui.cvGetTrackbarPos("maxRadius", wname)
 	pos7 = highgui.cvGetTrackbarPos("SearchRadius", wname)
 
-	on_trackbar1(50)
+	pos1 = int(pos2/2)
+	highgui.cvSetTrackbarPos("Canny1", wname, pos1)
+	on_trackbar1(pos1)
 
 	highgui.cvNamedWindow( "original",1 );
 	highgui.cvNamedWindow( "log-polar", 1 );
