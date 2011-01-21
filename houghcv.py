@@ -2,32 +2,77 @@ import sys, os
 import cv
 import Image
 import time
+#############################################################################
+# some "global" variables
 
+image = None
+pt1 = (-1,-1)
+pt2 = (-1,-1)
+add_remove_pt = False
+flags = 0
+night_mode = False
+need_to_init = False
 
-def draw_date_boundry(img, offset):
+#############################################################################
+# the mouse callback
 
+# the callback on the trackbar
+def on_mouse (event, x, y, flags, param):
+
+	# we will use the global pt and add_remove_pt
+	global pt1
+	global pt2
+
+	img1_copy = cv.CloneImage(param)
+
+	if event == cv.CV_EVENT_LBUTTONDOWN:
+		# user has click, so memorize it
+		if (pt1[0] > 0) & (pt2[0] > 0):
+			pt1 = (-1, -1)
+			pt2 = (-1, -1)
+			cv.ShowImage("Coin Image 1", img1_copy)
+			print "both >"
+		elif pt1[0] == -1 :
+			pt1 = (x, y)
+			pt2 = (-1, -1)
+			print "pt 1"
+		elif (pt1[0] > 0) & (x > pt1[0]) & (y > pt1[1]): 
+			pt2 = (x, y)	
+			#Draw date bounding rectangle  q		
+			cv.Rectangle(img1_copy , pt1, pt2, cv.CV_RGB(255, 255, 0), 2, 0)
+			cv.ShowImage("Coin Image 1", img1_copy)
+		print "pt1, pt2 = ", pt1,pt2
+		
+	#if x+y > 1:
+	#pt1 = (x, y)
+	#	cv.Circle(img1_copy,pt, 2, cv.CV_RGB(0, 0, 255), 2, cv.CV_AA, 0 ) 
+	#	cv.ShowImage("Coin Image 1",img1_copy)
+	#	print pt
+		#add_remove_pt = True
+
+#############################################################################
+
+def rotate_image(img, degrees):
+	"""
+    rotate(scr1, degrees) -> image
+    Parameters:	
+
+         *  image - source image
+         *  angle (integer) - The rotation angle in degrees. Positive values mean counter-clockwise 	rotation 
+	"""
 	temp_img = cv.CreateImage(cv.GetSize(img), 8, img.channels)
-	
 	mapMatrix = cv.CreateMat( 2, 3, cv.CV_32FC1 )
-	img_center = (cv.GetSize(img)[0]/2, cv.GetSize(img)[1]/2)
-	cv.GetRotationMatrix2D(img_center, offset, 1.0, mapMatrix)
+	img_size = cv.GetSize(img)
+	img_center = (int(img_size[0]/2), int(img_size[1]/2))
+	cv.GetRotationMatrix2D(img_center, degrees, 1.0, mapMatrix)
 	cv.WarpAffine(img , temp_img, mapMatrix, flags=cv.CV_INTER_LINEAR+cv.CV_WARP_FILL_OUTLIERS, fillval=(0, 0, 0, 0))
+	return(temp_img)
 
-	size_buffer = 15
-	radius_buffer = 50
 
-	coin1 = get_coin_center(img)
-	print "draw date coin1, coin2 = ", coin1  
-	coin1_center = int(coin1[0]), int(coin1[1])
-	coin1_radius = int(coin1[2])
-	coin1_inside_radius = coin1_radius - radius_buffer
-	
-	#Draw date bounding rectangle  
-	topleft_corner = (coin1_center[0]+coin1_inside_radius- size_buffer, coin1_center[1])
-	bottomright_corner = (coin1_center[0]+coin1_radius+size_buffer, coin1_center[1]+coin1_inside_radius- size_buffer )
-	cv.Rectangle(temp_img, topleft_corner, bottomright_corner, cv.CV_RGB(255, 255, 0), 2, 0)
-	cv.Circle(temp_img ,(coin1_center), 2, cv.CV_RGB(255, 255, 255), 2, cv.CV_AA, 0 ) 
-	cv.ShowImage("temp_img", temp_img)
+def draw_date_boundry(img, point1, point2):
+
+	cv.Rectangle(img, point1, point2, cv.CV_RGB(255, 255, 0), 2, 0) 
+	cv.ShowImage("temp_img", img)
 
 	
 
@@ -64,7 +109,6 @@ def get_orientation(img1, img2):
 	#cv.ShowImage("cropped_img1 ", cropped_img1 )
 	#cv.ShowImage("cropped_img2 ", cropped_img2 )
 	print "Before reize SIZES = ", cv.GetSize(cropped_img1), cv.GetSize(cropped_img2)
-	
 
 	gray1 = cv.CreateImage(cv.GetSize(cropped_img1), 8, 1)
 	gray2 = cv.CreateImage(cv.GetSize(cropped_img1), 8, 1)
@@ -90,10 +134,7 @@ def get_orientation(img1, img2):
 	best_sum = 0
 	best_orientation = 0
 	for i in range(1, 360):
-		mapMatrix = cv.CreateMat( 2, 3, cv.CV_32FC1 )
-		center = (cv.GetSize(gray2 )[0]/2, cv.GetSize(gray2 )[1]/2)
-		cv.GetRotationMatrix2D(center, i, 1.0, mapMatrix)
-		cv.WarpAffine(gray2 , temp_img, mapMatrix, flags=cv.CV_INTER_LINEAR+cv.CV_WARP_FILL_OUTLIERS, fillval=(0, 0, 0, 0))
+		temp_img = rotate_image(gray2, i)
 		cv.And(gray1,temp_img, subtracted_image)
 		cv.ShowImage("subtracted_image", subtracted_image)
 		cv.ShowImage("temp_img", temp_img)
@@ -104,9 +145,9 @@ def get_orientation(img1, img2):
 			best_orientation = i
 		#print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
 		key = cv.WaitKey(5)
-		if key ==1048603: break
+		if key == 27 or c == ord('q'):
+			break
 		time.sleep(.01)
-	draw_date_boundry(gray2, best_orientation)
 	cv.WaitKey()
 	return (best_orientation)
 
@@ -144,8 +185,7 @@ def get_coin_center(img):
 	best_circle = (0,0,0)
 	#print best_circle 
 	#cv.Smooth(edges, edges, cv.CV_GAUSSIAN, 9, 9)
-
-	for i in range (185, 225):
+	for i in range (180, 225):
 		#print i
 		storage = cv.CreateMat(50, 1, cv.CV_32FC3)
 		cv.SetZero(storage)
@@ -158,7 +198,7 @@ def get_coin_center(img):
 			center = cv.Round(circle_data[0]), cv.Round(circle_data[1])
 			radius = cv.Round(circle_data[2])
 			#print circle_data[0], circle_data[1], circle_data[2]
-			if radius > 185:
+			if radius > 180:
 				if radius > best_circle[2]:  
 					#print "best was = ", best_circle
 					best_circle = (circle_data[0], circle_data[1], circle_data[2])
@@ -169,22 +209,37 @@ def get_coin_center(img):
 
 
 
+if __name__=="__main__":	
+	img = cv.LoadImage(sys.argv[1])
 	
-img = cv.LoadImage(sys.argv[1])
-pil_img1 = Image.open(sys.argv[2])
-#pil_img1 = pil_img1.rotate(45)
-cv_im = cv.CreateImageHeader(pil_img1.size, cv.IPL_DEPTH_8U, 3)
-cv.SetData(cv_im, pil_img1.tostring())
+	pil_img1 = Image.open(sys.argv[2])
+	#pil_img1 = pil_img1.rotate(45)
+	cv_im = cv.CreateImageHeader(pil_img1.size, cv.IPL_DEPTH_8U, 3)
+	cv.SetData(cv_im, pil_img1.tostring())
 
-bounded_coin_img1 = draw_boundries(img)
-bounded_coin_img2 = draw_boundries(cv_im)
+	bounded_coin_img1 = draw_boundries(img)
+	bounded_coin_img2 = draw_boundries(cv_im)
+	img1_copy = cv.CloneImage(bounded_coin_img1)
 
-cv.ShowImage("Coin Image 1",bounded_coin_img1)
-cv.ShowImage("Coin Image 2",bounded_coin_img2)
+	cv.ShowImage("Coin Image 1",img1_copy)
+	cv.ShowImage("Coin Image 2",bounded_coin_img2)
+	# register the mouse callback
+	cv.SetMouseCallback ("Coin Image 1", on_mouse, bounded_coin_img1 )
 
-coin_orientation= get_orientation(img, cv_im)
-print "The coin is offest ", coin_orientation, " degrees"
-draw_date_boundry(cv_im, coin_orientation)
+	while True:
+		
+		c = cv.WaitKey(0)
 
-cv.WaitKey()
+		if c == 27 or c == ord('q'):
+		    break
+
+		if c == ord('p'):
+			break
+
+	coin_orientation = get_orientation(img, cv_im)
+	print "The coin is offest ", coin_orientation, " degrees"
+	cv_im = rotate_image(cv_im, coin_orientation)
+	draw_date_boundry(cv_im, pt1, pt2)
+
+	cv.WaitKey()
 
