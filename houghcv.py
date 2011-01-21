@@ -30,7 +30,7 @@ def on_mouse (event, x, y, flags, param):
 		if (pt1[0] > 0) & (pt2[0] > 0):
 			pt1 = (-1, -1)
 			pt2 = (-1, -1)
-			cv.ShowImage("Coin Image 1", img1_copy)
+			cv.ShowImage("After Scale img1", img1_copy)
 			print "both >"
 		elif pt1[0] == -1 :
 			pt1 = (x, y)
@@ -40,7 +40,7 @@ def on_mouse (event, x, y, flags, param):
 			pt2 = (x, y)	
 			#Draw date bounding rectangle  q		
 			cv.Rectangle(img1_copy , pt1, pt2, cv.CV_RGB(255, 255, 0), 2, 0)
-			cv.ShowImage("Coin Image 1", img1_copy)
+			cv.ShowImage("After Scale img1", img1_copy)
 		print "pt1, pt2 = ", pt1,pt2
 		
 	#if x+y > 1:
@@ -74,9 +74,7 @@ def draw_date_boundry(img, point1, point2):
 	cv.Rectangle(img, point1, point2, cv.CV_RGB(255, 255, 0), 2, 0) 
 	cv.ShowImage("temp_img", img)
 
-	
-
-def get_orientation(img1, img2):
+def scale_and_crop(img1, img2):
 	size_buffer = 15
 	radius_buffer = 50
 	coin1 = get_coin_center(img1)
@@ -103,52 +101,56 @@ def get_orientation(img1, img2):
 	#bottomright_corner2 = (coin2_center[0]+int((coin2_inside_radius*(cv.Sqrt(2)/2))), coin2_center[1]+int((coin2_inside_radius*(cv.Sqrt(2)/2))))
 
 	cropped_img1 = cv.GetSubRect(img1, (topleft_corner1[0], topleft_corner1[1], bottomright_corner1[0]-topleft_corner1[0], bottomright_corner1[1]-topleft_corner1[1]))
-
 	cropped_img2 = cv.GetSubRect(img2, (topleft_corner2[0], topleft_corner2[1], bottomright_corner2[0]-topleft_corner2[0], bottomright_corner2[1]-topleft_corner2[1]))
 
-	#cv.ShowImage("cropped_img1 ", cropped_img1 )
-	#cv.ShowImage("cropped_img2 ", cropped_img2 )
-	print "Before reize SIZES = ", cv.GetSize(cropped_img1), cv.GetSize(cropped_img2)
+	print "Before resize SIZES = ", cv.GetSize(cropped_img1), cv.GetSize(cropped_img2)
+	temp_img = cv.CreateImage(cv.GetSize(cropped_img1), 8, img2.channels)
+	temp_img2 = cv.CreateImage(cv.GetSize(cropped_img1), 8, img1.channels)
+	cv.Resize(cropped_img2, temp_img)
+	cv.Resize(cropped_img1, temp_img2)
+	print "Before resize SIZES = ", cv.GetSize(cropped_img1), cv.GetSize(temp_img)
+	#cv.WaitKey()
+	return(temp_img2, temp_img)
 
-	gray1 = cv.CreateImage(cv.GetSize(cropped_img1), 8, 1)
-	gray2 = cv.CreateImage(cv.GetSize(cropped_img1), 8, 1)
-	temp_img2 = cv.CreateImage(cv.GetSize(cropped_img1), 8, 3)
-	temp_img = cv.CreateImage(cv.GetSize(cropped_img1), 8, 1)
-	subtracted_image = cv.CreateImage(cv.GetSize(cropped_img1), 8, 1)
-	cv.Resize(cropped_img2, temp_img2)
-	cv.CvtColor(cropped_img1, gray1, cv.CV_BGR2GRAY)
-	cv.CvtColor(temp_img2, gray2, cv.CV_BGR2GRAY)
-	cv.ShowImage("gray1", gray1)
-	cv.ShowImage("gray2", gray2)
-	print "After Resize SIZES = ", cv.GetSize(gray1), cv.GetSize(gray2)
-	cv.WaitKey()
+def gray_images(img):
 
-	cv.Smooth(gray1, gray1, cv.CV_GAUSSIAN, 9, 9)
-	cv.Smooth(gray2, gray2, cv.CV_GAUSSIAN, 9, 9)
+	temp_img = cv.CreateImage(cv.GetSize(img), 8, 1)
+	if img.channels == 1:
+		temp_img = img
+	if img1.channels > 1:
+		cv.CvtColor(img, temp_img, cv.CV_BGR2GRAY)
+	return(temp_img)
 
-	cv.Canny(gray1,gray1 ,87,175, 3)
-	cv.Canny(gray2,gray2, 87,175, 3)
-	cv.ShowImage("gray1", gray1)
-	cv.ShowImage("gray2", gray2)
+
+def get_orientation(img1, img2):
+
+	subtracted_image = cv.CreateImage(cv.GetSize(img1), 8, 1)
+	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)
+
+	cv.Smooth(img1, img1, cv.CV_GAUSSIAN, 9, 9)
+	cv.Smooth(img2, img2, cv.CV_GAUSSIAN, 9, 9)
+	cv.Canny(img1,img1 ,87,175, 3)
+	cv.Canny(img2,img2, 87,175, 3)
+	cv.ShowImage("img1", img1)
+	cv.ShowImage("img2", img2)
 	cv.WaitKey()
 	best_sum = 0
 	best_orientation = 0
 	for i in range(1, 360):
-		temp_img = rotate_image(gray2, i)
-		cv.And(gray1,temp_img, subtracted_image)
+		temp_img = rotate_image(img2, i)
+		cv.And(img1, temp_img , subtracted_image)
 		cv.ShowImage("subtracted_image", subtracted_image)
-		cv.ShowImage("temp_img", temp_img)
+		cv.ShowImage("Image of Interest", temp_img )
 		sum_of_and = cv.Sum(subtracted_image)
 		if best_sum == 0: best_sum = sum_of_and[0]
 		if sum_of_and[0] > best_sum: 
 			best_sum = sum_of_and[0]
 			best_orientation = i
-		#print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
+		print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
 		key = cv.WaitKey(5)
-		if key == 27 or c == ord('q'):
+		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
 			break
-		time.sleep(.01)
-	cv.WaitKey()
+		#time.sleep(.01)
 	return (best_orientation)
 
 
@@ -209,37 +211,63 @@ def get_coin_center(img):
 
 
 
-if __name__=="__main__":	
-	img = cv.LoadImage(sys.argv[1])
+if __name__=="__main__":
 	
-	pil_img1 = Image.open(sys.argv[2])
-	#pil_img1 = pil_img1.rotate(45)
-	cv_im = cv.CreateImageHeader(pil_img1.size, cv.IPL_DEPTH_8U, 3)
-	cv.SetData(cv_im, pil_img1.tostring())
+	if len(sys.argv) < 3:
+		print "******* Requires 2 image files for comparison. *******"
+		sys.exit(-1)
 
-	bounded_coin_img1 = draw_boundries(img)
-	bounded_coin_img2 = draw_boundries(cv_im)
-	img1_copy = cv.CloneImage(bounded_coin_img1)
+	try:
+		img1 = cv.LoadImage(sys.argv[1])
+		img2 = cv.LoadImage(sys.argv[2])
+	except:
+		print "******* Could not open image files *******"
+		sys.exit(-1)
 
-	cv.ShowImage("Coin Image 1",img1_copy)
+	bounded_coin_img1 = draw_boundries(img1)
+	bounded_coin_img2 = draw_boundries(img2)
+	
+
+	cv.ShowImage("Coin Image 1",bounded_coin_img1)
 	cv.ShowImage("Coin Image 2",bounded_coin_img2)
+	cv.WaitKey()
+	
+	img1, img2 = scale_and_crop(img1, img2)
+	cv.ShowImage("After Scale img1", img1)
+	cv.ShowImage("After Scale img2", img2)
+	img1_copy = cv.CloneImage(img1)
+	img2_copy = cv.CloneImage(img2)
 	# register the mouse callback
-	cv.SetMouseCallback ("Coin Image 1", on_mouse, bounded_coin_img1 )
+	cv.SetMouseCallback ("After Scale img1", on_mouse, img1_copy)
 
 	while True:
-		
-		c = cv.WaitKey(0)
-
-		if c == 27 or c == ord('q'):
+		c = cv.WaitKey(5)
+		if c == 27 or c == ord('q') or c == 1048688 or c == 1048603:
 		    break
-
 		if c == ord('p'):
 			break
+		if c != -1:
+			print c
 
-	coin_orientation = get_orientation(img, cv_im)
-	print "The coin is offest ", coin_orientation, " degrees"
-	cv_im = rotate_image(cv_im, coin_orientation)
-	draw_date_boundry(cv_im, pt1, pt2)
+	
+	img1_gray = cv.CloneImage(img1)
+	img2_gray = cv.CloneImage(img2)
 
+	img1_gray = gray_images(img1_gray)
+	img2_gray = gray_images(img2_gray)
+
+	cv.ShowImage("after grey img1", img1_gray)
+	cv.ShowImage("after grey img2", img2_gray)
 	cv.WaitKey()
+	coin_orientation = get_orientation(img1_gray, img2_gray)
+	print "The coin is offest ", coin_orientation, " degrees"
+
+	img2 = rotate_image(img2, coin_orientation)
+
+	draw_date_boundry(img2, pt1, pt2)
+
+	cv.ShowImage("after all img1", img1)
+	cv.ShowImage("after all img2", img2)
+	cv.WaitKey()
+
 
