@@ -68,6 +68,9 @@ def rotate_image(img, degrees):
 	cv.WarpAffine(img , temp_img, mapMatrix, flags=cv.CV_INTER_LINEAR+cv.CV_WARP_FILL_OUTLIERS, fillval=(0, 0, 0, 0))
 	return(temp_img)
 
+def get_image( camera1 ):
+	img = cv.QueryFrame( camera1 )
+	return img
 
 def draw_date_boundry(img, point1, point2):
 
@@ -90,15 +93,15 @@ def scale_and_crop(img1, img2):
 	coin2_inside_radius = coin2_radius - radius_buffer
 
 	#crop OUTSIDE bounding rectangle for orientation 
-	topleft_corner1 = (coin1_center[0]-coin1_radius-size_buffer, coin1_center[1]-coin1_radius-size_buffer)
-	bottomright_corner1 = (coin1_center[0]+coin1_radius+size_buffer, coin1_center[1]+coin1_radius+size_buffer)
-	topleft_corner2 = (coin2_center[0]-coin2_radius-size_buffer, coin2_center[1]-coin2_radius-size_buffer)
-	bottomright_corner2 = (coin2_center[0]+coin2_radius+size_buffer, coin2_center[1]+coin2_radius+size_buffer)
+	#topleft_corner1 = (coin1_center[0]-coin1_radius-size_buffer, coin1_center[1]-coin1_radius-size_buffer)
+	#bottomright_corner1 = (coin1_center[0]+coin1_radius+size_buffer, coin1_center[1]+coin1_radius+size_buffer)
+	#topleft_corner2 = (coin2_center[0]-coin2_radius-size_buffer, coin2_center[1]-coin2_radius-size_buffer)
+	#bottomright_corner2 = (coin2_center[0]+coin2_radius+size_buffer, coin2_center[1]+coin2_radius+size_buffer)
 	#crop inside bounding rectangle for orientation 
-	#topleft_corner1 = (coin1_center[0]-int((coin1_inside_radius*(cv.Sqrt(2)/2))), coin1_center[1]-int((coin1_inside_radius*(cv.Sqrt(2)/2))))
-	#bottomright_corner1 = (coin1_center[0]+int((coin1_inside_radius*(cv.Sqrt(2)/2))), coin1_center[1]+int((coin1_inside_radius*(cv.Sqrt(2)/2))))
-	#topleft_corner2 = (coin2_center[0]-int((coin2_inside_radius*(cv.Sqrt(2)/2))), coin2_center[1]-int((coin2_inside_radius*(cv.Sqrt(2)/2))))
-	#bottomright_corner2 = (coin2_center[0]+int((coin2_inside_radius*(cv.Sqrt(2)/2))), coin2_center[1]+int((coin2_inside_radius*(cv.Sqrt(2)/2))))
+	topleft_corner1 = (coin1_center[0]-int((coin1_inside_radius*(cv.Sqrt(2)/2))), coin1_center[1]-int((coin1_inside_radius*(cv.Sqrt(2)/2))))
+	bottomright_corner1 = (coin1_center[0]+int((coin1_inside_radius*(cv.Sqrt(2)/2))), coin1_center[1]+int((coin1_inside_radius*(cv.Sqrt(2)/2))))
+	topleft_corner2 = (coin2_center[0]-int((coin2_inside_radius*(cv.Sqrt(2)/2))), coin2_center[1]-int((coin2_inside_radius*(cv.Sqrt(2)/2))))
+	bottomright_corner2 = (coin2_center[0]+int((coin2_inside_radius*(cv.Sqrt(2)/2))), coin2_center[1]+int((coin2_inside_radius*(cv.Sqrt(2)/2))))
 
 	cropped_img1 = cv.GetSubRect(img1, (topleft_corner1[0], topleft_corner1[1], bottomright_corner1[0]-topleft_corner1[0], bottomright_corner1[1]-topleft_corner1[1]))
 	cropped_img2 = cv.GetSubRect(img2, (topleft_corner2[0], topleft_corner2[1], bottomright_corner2[0]-topleft_corner2[0], bottomright_corner2[1]-topleft_corner2[1]))
@@ -231,34 +234,40 @@ if __name__=="__main__":
 	cv.ShowImage("Coin Image 1",bounded_coin_img1)
 	cv.ShowImage("Coin Image 2",bounded_coin_img2)
 	cv.WaitKey()
-	
-	img1, img2 = scale_and_crop(img1, img2)
-	cv.ShowImage("After Scale img1", img1)
-	cv.ShowImage("After Scale img2", img2)
 	img1_copy = cv.CloneImage(img1)
 	img2_copy = cv.CloneImage(img2)
+
+	img1_copy, img2_copy = scale_and_crop(img1, img2)
+	cv.ShowImage("After Scale img1", img1_copy)
+	cv.ShowImage("After Scale img2", img2_copy)
+
 	# register the mouse callback
 	cv.SetMouseCallback ("After Scale img1", on_mouse, img1_copy)
-
+	
+	camera1 = cv.CreateCameraCapture( 0 )
+	
 	while True:
 		c = cv.WaitKey(5)
 		if c == 27 or c == ord('q') or c == 1048688 or c == 1048603:
 		    break
 		if c == ord('p'):
 			break
+		if c == ord('s'):
+			 img1_copy = get_image(camera1)
+			 cv.ShowImage("camera display", img1_copy)
 		if c != -1:
 			print c
 
 	
-	img1_gray = cv.CloneImage(img1)
-	img2_gray = cv.CloneImage(img2)
+	img1_gray = cv.CloneImage(img1_copy)
+	img2_gray = cv.CloneImage(img2_copy)
 
 	img1_gray = gray_images(img1_gray)
 	img2_gray = gray_images(img2_gray)
 
-	cv.ShowImage("after grey img1", img1_gray)
-	cv.ShowImage("after grey img2", img2_gray)
-	cv.WaitKey()
+	#cv.ShowImage("after grey img1", img1_gray)
+	#cv.ShowImage("after grey img2", img2_gray)
+	#cv.WaitKey()
 	coin_orientation = get_orientation(img1_gray, img2_gray)
 	print "The coin is offest ", coin_orientation, " degrees"
 
