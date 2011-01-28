@@ -130,31 +130,65 @@ def get_orientation(img1, img2):
 	subtracted_image = cv.CreateImage(cv.GetSize(img1), 8, 1)
 	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)
 
-	cv.Smooth(img1, img1, cv.CV_GAUSSIAN, 9, 9)
-	cv.Smooth(img2, img2, cv.CV_GAUSSIAN, 9, 9)
-	cv.Canny(img1,img1 ,87,175, 3)
-	cv.Canny(img2,img2, 87,175, 3)
-	cv.ShowImage("img1", img1)
-	cv.ShowImage("img2", img2)
-	cv.WaitKey()
+	img1_copy = cv.CloneImage(img1)	
+	img2_copy = cv.CloneImage(img2)
+	canny_parm1 = 90
+	canny_parm2 = 45
+	to_smooth = 1
+	very_best_sum = 0
+	very_best_orientation = 0
+	best_settings = [0,0,0,0,0]
+
+	#for canny_parm1 in range(120,45, - 5):
+		
+		#for canny_parm2 in range(180, 50, - 5):
+			#print 'canny_parm2', canny_parm2
+			#print "iteration = ", canny_parm1 , canny_parm2
+			#print "Best Settings = ",best_settings 
+			#for to_smooth in range(1,3):
+				#print "settings = ", to_smooth
+
+	if to_smooth == 1:
+		cv.Smooth(img1_copy, img1_copy, cv.CV_GAUSSIAN, 3, 3)
+		cv.Smooth(img2_copy, img2_copy, cv.CV_GAUSSIAN, 3, 3)
+	#cv.WaitKey()
+
+	cv.Canny(img1_copy,img1_copy ,canny_parm1,canny_parm2, 3)
+	cv.Canny(img2_copy,img2_copy, canny_parm1,canny_parm2, 3)
+	#cv.ShowImage("img1", img1_copy)
+	#cv.ShowImage("img2", img2_copy)
+
+	temp_img = rotate_image(img2, very_best_orientation)
+	cv.ShowImage("corrected img2", temp_img)
+	#cv.WaitKey()
 	best_sum = 0
 	best_orientation = 0
 	for i in range(1, 360):
-		temp_img = rotate_image(img2, i)
-		cv.And(img1, temp_img , subtracted_image)
-		cv.ShowImage("subtracted_image", subtracted_image)
-		cv.ShowImage("Image of Interest", temp_img )
+		temp_img = rotate_image(img2_copy, i)
+		cv.And(img1_copy, temp_img , subtracted_image)
+		#cv.ShowImage("subtracted_image", subtracted_image)
+		#cv.ShowImage("Image of Interest", temp_img )
 		sum_of_and = cv.Sum(subtracted_image)
 		if best_sum == 0: best_sum = sum_of_and[0]
 		if sum_of_and[0] > best_sum: 
 			best_sum = sum_of_and[0]
 			best_orientation = i
-		print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
+		#print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
 		key = cv.WaitKey(5)
 		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
 			break
 		#time.sleep(.01)
-	return (best_orientation)
+		if best_sum > very_best_sum:
+			very_best_sum = best_sum
+			very_best_orientation = best_orientation
+			best_settings = [canny_parm1 ,canny_parm2 ,to_smooth, very_best_sum, very_best_orientation]
+			print "New Best Settings = ",best_settings 
+
+	img1_copy = cv.CloneImage(img1)	
+	img2_copy = cv.CloneImage(img2)
+
+	print "Final Best Settings = ", best_settings
+	return (very_best_orientation)
 
 
 def draw_boundries(img):

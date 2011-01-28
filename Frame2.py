@@ -17,8 +17,22 @@ imgs = {'.bmp' : wx.BITMAP_TYPE_BMP,
         '.ico' : wx.BITMAP_TYPE_ICO}
 
 capture = 0
-#base_img = cv.CreateImage((640,480), cv.IPL_DEPTH_16S, 3)
-#snap_img = cv.CreateImage((640,480), cv.IPL_DEPTH_16S, 3)
+
+def rotate_image(img, degrees):
+	"""
+    rotate(scr1, degrees) -> image
+    Parameters:	
+
+         *  image - source image
+         *  angle (integer) - The rotation angle in degrees. Positive values mean counter-clockwise 	rotation 
+	"""
+	temp_img = cv.CreateImage(cv.GetSize(img), 8, img.channels)
+	mapMatrix = cv.CreateMat( 2, 3, cv.CV_32FC1 )
+	img_size = cv.GetSize(img)
+	img_center = (int(img_size[0]/2), int(img_size[1]/2))
+	cv.GetRotationMatrix2D(img_center, degrees, 1.0, mapMatrix)
+	cv.WarpAffine(img , temp_img, mapMatrix, flags=cv.CV_INTER_LINEAR+cv.CV_WARP_FILL_OUTLIERS, fillval=(0, 0, 0, 0))
+	return(temp_img)
 
 def gray_images(img):
 
@@ -60,7 +74,75 @@ def get_coin_center(img):
 
  	return (best_circle)
 
+def scale_and_crop(img1, img2):
+	size_buffer = 15
+	radius_buffer = 50
+	coin1 = get_coin_center(img1)
+	coin2 = get_coin_center(img2)
+	print "coin1, coin2 = ", coin1, coin2 
+	print coin1[2]-coin2[2]
+	 
+	coin1_center = int(coin1[0]), int(coin1[1])
+	coin1_radius = int(coin1[2])
+	coin1_inside_radius = coin1_radius - radius_buffer
+	coin2_center = int(coin2[0]), int(coin2[1])
+	coin2_radius = int(coin2[2])
+	coin2_inside_radius = coin2_radius - radius_buffer
 
+	#crop OUTSIDE bounding rectangle for orientation 
+	#topleft_corner1 = (coin1_center[0]-coin1_radius-size_buffer, coin1_center[1]-coin1_radius-size_buffer)
+	#bottomright_corner1 = (coin1_center[0]+coin1_radius+size_buffer, coin1_center[1]+coin1_radius+size_buffer)
+	#topleft_corner2 = (coin2_center[0]-coin2_radius-size_buffer, coin2_center[1]-coin2_radius-size_buffer)
+	#bottomright_corner2 = (coin2_center[0]+coin2_radius+size_buffer, coin2_center[1]+coin2_radius+size_buffer)
+	#crop inside bounding rectangle for orientation 
+	topleft_corner1 = (coin1_center[0]-int((coin1_inside_radius*(cv.Sqrt(2)/2))), coin1_center[1]-int((coin1_inside_radius*(cv.Sqrt(2)/2))))
+	bottomright_corner1 = (coin1_center[0]+int((coin1_inside_radius*(cv.Sqrt(2)/2))), coin1_center[1]+int((coin1_inside_radius*(cv.Sqrt(2)/2))))
+	topleft_corner2 = (coin2_center[0]-int((coin2_inside_radius*(cv.Sqrt(2)/2))), coin2_center[1]-int((coin2_inside_radius*(cv.Sqrt(2)/2))))
+	bottomright_corner2 = (coin2_center[0]+int((coin2_inside_radius*(cv.Sqrt(2)/2))), coin2_center[1]+int((coin2_inside_radius*(cv.Sqrt(2)/2))))
+
+	cropped_img1 = cv.GetSubRect(img1, (topleft_corner1[0], topleft_corner1[1], bottomright_corner1[0]-topleft_corner1[0], bottomright_corner1[1]-topleft_corner1[1]))
+	cropped_img2 = cv.GetSubRect(img2, (topleft_corner2[0], topleft_corner2[1], bottomright_corner2[0]-topleft_corner2[0], bottomright_corner2[1]-topleft_corner2[1]))
+
+	print "Before resize SIZES = ", cv.GetSize(cropped_img1), cv.GetSize(cropped_img2)
+	temp_img = cv.CreateImage(cv.GetSize(cropped_img1), 8, img2.channels)
+	temp_img2 = cv.CreateImage(cv.GetSize(cropped_img1), 8, img1.channels)
+	cv.Resize(cropped_img2, temp_img)
+	cv.Resize(cropped_img1, temp_img2)
+	print "Before resize SIZES = ", cv.GetSize(cropped_img1), cv.GetSize(temp_img)
+	#cv.WaitKey()
+	return(temp_img2, temp_img)
+
+
+def get_orientation(img1, img2):
+
+	subtracted_image = cv.CreateImage(cv.GetSize(img1), 8, 1)
+	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)
+
+	cv.Smooth(img1, img1, cv.CV_GAUSSIAN, 9, 9)
+	cv.Smooth(img2, img2, cv.CV_GAUSSIAN, 9, 9)
+	cv.Canny(img1,img1 ,87,175, 3)
+	cv.Canny(img2,img2, 87,175, 3)
+	cv.ShowImage("img1", img1)
+	cv.ShowImage("img2", img2)
+	cv.WaitKey()
+	best_sum = 0
+	best_orientation = 0
+	for i in range(1, 360):
+		temp_img = rotate_image(img2, i)
+		cv.And(img1, temp_img , subtracted_image)
+		cv.ShowImage("subtracted_image", subtracted_image)
+		cv.ShowImage("Image of Interest", temp_img )
+		sum_of_and = cv.Sum(subtracted_image)
+		if best_sum == 0: best_sum = sum_of_and[0]
+		if sum_of_and[0] > best_sum: 
+			best_sum = sum_of_and[0]
+			best_orientation = i
+		print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
+		key = cv.WaitKey(5)
+		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
+			break
+		#time.sleep(.01)
+	return (best_orientation)
 
 def draw_boundries(img):
 
@@ -274,14 +356,16 @@ class Frame2(wx.Frame):
         
         img1_gray = gray_images(img1_gray)
         img2_gray = gray_images(img2_gray)
+        print get_orientation(img1_gray, img2_gray)
+        #img1_gray, img2_gray = scale_and_crop(img1_gray, img2_gray)
         cv.SaveImage("snapshot.png", img2_gray)
-        pygame.mixer.music.load('./sounds/sound1.ogg')
-        pygame.mixer.music.play()
-        is_playing = pygame.mixer.music.get_busy()
-        while is_playing:
-            time.sleep(1)
-            is_playing = pygame.mixer.music.get_busy()
-            print "busy= ", is_playing
+        #pygame.mixer.music.load('./sounds/sound1.ogg')
+        #pygame.mixer.music.play()
+        #is_playing = pygame.mixer.music.get_busy()
+        #while is_playing:
+        #    time.sleep(1)
+        #    is_playing = pygame.mixer.music.get_busy()
+        #    print "busy= ", is_playing
             
         #pygame.event.wait()
         self.UpdateSnapshot(self)
