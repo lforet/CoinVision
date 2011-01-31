@@ -132,9 +132,9 @@ def get_orientation(img1, img2):
 
 	img1_copy = cv.CloneImage(img1)	
 	img2_copy = cv.CloneImage(img2)
-	canny_parm1 = 90
-	canny_parm2 = 45
-	to_smooth = 1
+	canny_parm1 = 115
+	canny_parm2 = 55
+	to_smooth = 2
 	very_best_sum = 0
 	very_best_orientation = 0
 	best_settings = [0,0,0,0,0]
