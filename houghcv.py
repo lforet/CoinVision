@@ -2,6 +2,8 @@ import sys, os
 import cv
 import Image
 import time
+import scipy.spatial
+
 #############################################################################
 # some "global" variables
 
@@ -135,19 +137,16 @@ def get_orientation(img1, img2):
 	canny_parm1 = 115
 	canny_parm2 = 55
 	to_smooth = 2
+
 	very_best_sum = 0
 	very_best_orientation = 0
 	best_settings = [0,0,0,0,0]
 
-	#for canny_parm1 in range(120,45, - 5):
-		
-		#for canny_parm2 in range(180, 50, - 5):
-			#print 'canny_parm2', canny_parm2
-			#print "iteration = ", canny_parm1 , canny_parm2
-			#print "Best Settings = ",best_settings 
-			#for to_smooth in range(1,3):
+	#for canny_parm1 in range(125,40, - 1):	
+	#	for canny_parm2 in range(250, 40, - 1):
+	#		print "iteration = ", canny_parm1 , canny_parm2, "  Best Settings = ",best_settings 
+	#		for to_smooth in range(1,3):
 				#print "settings = ", to_smooth
-
 	if to_smooth == 1:
 		cv.Smooth(img1_copy, img1_copy, cv.CV_GAUSSIAN, 3, 3)
 		cv.Smooth(img2_copy, img2_copy, cv.CV_GAUSSIAN, 3, 3)
@@ -155,18 +154,20 @@ def get_orientation(img1, img2):
 
 	cv.Canny(img1_copy,img1_copy ,canny_parm1,canny_parm2, 3)
 	cv.Canny(img2_copy,img2_copy, canny_parm1,canny_parm2, 3)
-	#cv.ShowImage("img1", img1_copy)
-	#cv.ShowImage("img2", img2_copy)
+	cv.ShowImage("img1", img1_copy)
+	cv.ShowImage("img2", img2_copy)
 
 	temp_img = rotate_image(img2, very_best_orientation)
 	cv.ShowImage("corrected img2", temp_img)
 	#cv.WaitKey()
 	best_sum = 0
 	best_orientation = 0
+	best_euclidean = 0
+	best_orientation_euclidean = 0
 	for i in range(1, 360):
 		temp_img = rotate_image(img2_copy, i)
 		cv.And(img1_copy, temp_img , subtracted_image)
-		#cv.ShowImage("subtracted_image", subtracted_image)
+		# cv.ShowImage("subtracted_image", subtracted_image)
 		#cv.ShowImage("Image of Interest", temp_img )
 		sum_of_and = cv.Sum(subtracted_image)
 		if best_sum == 0: best_sum = sum_of_and[0]
@@ -174,11 +175,19 @@ def get_orientation(img1, img2):
 			best_sum = sum_of_and[0]
 			best_orientation = i
 		#print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
+		e_dist = scipy.spatial.distance.euclidean(cv.GetMat(img1_copy), cv.GetMat(temp_img))
+		if best_euclidean  == 0: best_euclidean = e_dist
+		if e_dist < best_euclidean: 
+			print "best_euclidean =", e_dist, i
+			best_euclidean =  e_dist
+			best_orientation_euclidean = i
+			cv.ShowImage("Image of Interest", temp_img )
+			#cv.WaitKey()
 		key = cv.WaitKey(5)
 		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
 			break
 		#time.sleep(.01)
-		if best_sum > very_best_sum:
+		if (best_sum > very_best_sum): #& (best_orientation > 120) & (best_orientation < 125):
 			very_best_sum = best_sum
 			very_best_orientation = best_orientation
 			best_settings = [canny_parm1 ,canny_parm2 ,to_smooth, very_best_sum, very_best_orientation]
@@ -188,6 +197,7 @@ def get_orientation(img1, img2):
 	img2_copy = cv.CloneImage(img2)
 
 	print "Final Best Settings = ", best_settings
+	print "best_orientation_euclidean = ", best_orientation_euclidean
 	return (very_best_orientation)
 
 
@@ -224,7 +234,7 @@ def get_coin_center(img):
 	best_circle = (0,0,0)
 	#print best_circle 
 	#cv.Smooth(edges, edges, cv.CV_GAUSSIAN, 9, 9)
-	for i in range (180, 225):
+	for i in range (180, 235):
 		#print i
 		storage = cv.CreateMat(50, 1, cv.CV_32FC3)
 		cv.SetZero(storage)

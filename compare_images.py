@@ -21,7 +21,7 @@ def rmsdiff(im1, im2):
 
 img1 = cv.LoadImageM(sys.argv[1], cv.CV_LOAD_IMAGE_GRAYSCALE)
 img2 = cv.LoadImageM(sys.argv[2], cv.CV_LOAD_IMAGE_GRAYSCALE)
-
+pil_img = Image.open(sys.argv[1])
 
 pil_img1 = Image.fromstring("L", cv.GetSize(img1), img1.tostring())
 pil_img2 = Image.fromstring("L", cv.GetSize(img2), img2.tostring())
@@ -60,7 +60,6 @@ pil_img1 = pil_img1.rotate(27)
 cv_im = cv.CreateImageHeader(pil_img1.size, cv.IPL_DEPTH_8U, 1)
 cv.SetData(cv_im, pil_img1.tostring())
 print "PIL time = ", (time.time() - start)
-cv.WaitKey()
 cv.ShowImage("Rotated_PIL", cv_im)
 cv.WaitKey()
 
@@ -85,8 +84,15 @@ print scipy.spatial.distance.euclidean(img1[0][0],img2[0][0])
 print scipy.spatial.distance.euclidean(img1[0],img2[0])
 print scipy.spatial.distance.euclidean(img1,img2)
 print scipy.spatial.distance.euclidean(img1, temp_img)
-print scipy.spatial.distance.euclidean(img1, cv.GetMat(cv_im))
+print scipy.spatial.distance.euclidean(img1, cv.GetMat(cv_img1))
 print scipy.spatial.distance.euclidean(temp_img, cv.GetMat(cv_im))
+#cv.SetData(cv_img1, pil_img.tostring())
+print cv.Sum(img1), cv.Sum(cv_img1)
+cv.ShowImage("img1", temp_img)
+cv.ShowImage("cv_img1", cv_im)
+cv.WaitKey()
+
+
 
 #Y = scipy.spatial.distance.cdist(img1,img2, 'correlation')
 #print Y.size
