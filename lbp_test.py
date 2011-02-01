@@ -5,8 +5,10 @@ from scipy.misc import imread, imshow
 import scipy
 from PIL import ImageOps
 from PIL import Image
-import numpy as np
+import numpy 
 import time
+import scipy.spatial
+
 
 def decimal2binary(n):
     '''convert denary integer n to binary string bStr'''
@@ -35,7 +37,11 @@ def is_uniformLBP(digits):
 			if a != digits[i]:
 				transition_count = transition_count + 1
 				a = digits[i]
-	return transition_count
+	if transition_count < 3:
+		answer = True
+	else: 
+		answer = False
+	return transition_count, answer
 
 
 def image2array(im):
@@ -64,7 +70,7 @@ def CalcLBP(img):
 	grayimage = ImageOps.grayscale(img)
 	#make a copy to return
 	returnimage = Image.new("L", (xmax,ymax))
-	neighborRGB = np.empty([8], dtype=int)
+	neighborRGB = numpy.empty([8], dtype=int)
 	meanRGB = 0
 	imagearray = grayimage.load()
 	for y in range(1, ymax-1, 1):				
@@ -90,7 +96,7 @@ def CalcLBP(img):
 				#if neighborRGB[i] >= centerRGB:
 					lbp = lbp + (2**i)
 			#putpixel adds 1 second vs storing to array
-			#print "lbp = ", lbp, " bits = ", decimal2binary(lbp), digitlist(lbp, numdigits=8, base=2), " is_uniformLBP(digits) = ", is_uniformLBP( digitlist(lbp, numdigits=8, base=2))
+			print "lbp = ", lbp, " bits = ", decimal2binary(lbp), digitlist(lbp, numdigits=8, base=2), " is_uniformLBP(digits) = ", is_uniformLBP( digitlist(lbp, numdigits=8, base=2))
 			#time.sleep(1)
 			returnimage.putpixel((x,y), lbp)
 	return returnimage
@@ -111,14 +117,40 @@ print lbp1.ndim
 print lbp1.size
 print lbp1
 
+img4 = scipy.mean(img,2)
+img4 = array2image(img4)
+img4 = img4.rotate(45)
+img4 = image2array(img4)
+lbp2= mahotas.features.lbp(img4, 1, 8, ignore_zeros=False)
+img4 = array2image(img4)
+
 img2 = array2image(img2)
 img2.show()
 
 img3 = CalcLBP(img2)
 img3.show()
 
-h1 = np.array(img3.histogram())
+h1 = numpy.array(img3.histogram())
 print h1
+
+img4 = CalcLBP(img4)
+img4.show()
+h2 = numpy.array(img4.histogram())
+print h2.size
+h2[255] = h1[255]
+print h2
+
+print lbp2
+print scipy.spatial.distance.euclidean(h1,h2)
+print scipy.spatial.distance.euclidean(lbp1, lbp2)
+
+h1 = img2.histogram()
+img5 = scipy.mean(img,2)
+img5 = array2image(img5)
+img5 = img5.rotate(45)
+h2 = img5.histogram()
+img5.show()
+print scipy.spatial.distance.euclidean(h1,h2)
 
 #img1 = Image.fromstring("L", cv.GetSize(pp_obj_img), pp_obj_img.tostring())
 

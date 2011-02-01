@@ -108,7 +108,8 @@ if __name__=="__main__":
 	cv.WaitKey()
 	best_sum = 0
 	best_orientation = (0,0)
-
+	best_hu = 0
+	hu2 = numpy.array(cv.GetHuMoments(cv.Moments(img2_copy)))
 
 for y in range (230, (img_height-obj_height), 1):
 	for x in range(420,(img_width-obj_width),1):	
@@ -166,12 +167,22 @@ for y in range (230, (img_height-obj_height), 1):
 		#rms = math.sqrt(reduce(operator.add, map(lambda a,b: (a-b)**2, h1, h2))/len(h1))
 		#rms2 = math.sqrt(reduce(operator.add, map(lambda a,b: (a-b)**2, cropped_hu, obj_hu))/len(cropped_hu))
 		pixels_dist = dist(pixels1, pixels2)
+		
 		#print pixels_dist
 		#print "the root-mean-square (rms) dif =", rmsdiff(pil_img1, pil_img2)
 		#print scipy.spatial.distance.euclidean(pil_img1, pil_img2)
 		#print type(cropped_img), type(img2_copy)
 		#get_orientation (cropped_img, img2_copy)
 		subtracted_image = cv.CreateImage(cv.GetSize(img2_copy), 8, 1)
+		hu1 = numpy.array(cv.GetHuMoments(cv.Moments(cropped_img)))
+		
+		hu_dist = dist(hu1, hu2)
+		if best_hu == 0: best_hu = hu_dist
+		if hu_dist < best_hu:
+			best_hu = hu_dist
+			print "best_hu = ", best_hu
+			cv.WaitKey()
+
 		cv.And(cropped_img, img2_copy , subtracted_image)
 		cv.ShowImage("subtracted_image", subtracted_image)
 		sum_of_and = cv.Sum(subtracted_image)
@@ -213,7 +224,7 @@ for y in range (230, (img_height-obj_height), 1):
 		#cv.SetZero(cropped_img)  
 		#print cv.GetSize(cropped_img)
 		#cv.WaitKey(0)
-
+	
 #cv.ShowImage("Image",img )
 
 

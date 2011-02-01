@@ -58,75 +58,68 @@ if __name__=="__main__":
 		sys.exit(-1)
 	if count > 0:
 		#delete classid and classdata files to completely rebuild them 
-		f_handle = open("greenbandclassid.txt", 'w')
+		f_handle = open("coin_date_classid.txt", 'w')
 		f_handle.close()
-		f_handle = open("greenbanddata.txt", 'w')
+		f_handle = open("coin_date_data.txt", 'w')
 		f_handle.close()
 		print "Files to Process: ", count
 		for subdir, dirs, files in os.walk(path):
 			for file in files:
 				filename1= os.path.join(path, file)
 				try:
-					img1 = cv.LoadImage(filename1)
+					img1 = cv.LoadImageM(filename1)
 				except:
 					print "******* Could not open image files *******"
 					sys.exit(-1)
 				print "\n Processing current image: " , filename1 
-			
-			if im.size[0] <> 40 or im.size[1] <> 40:
+
+			img_size = cv.GetSize(img1)
+			if img_size[0] <> 40 or img_size[1] <> 40:
 				print "Image is not right size. Resizing image...."
-				im = im.resize((320, 240))
-				print "Resized to 320, 340"
-			if im.mode == "RGB":
-				print "Image has multiple color bands...Splitting Bands...."
-				Red_Band, Green_Band,Blue_Band = im.split()
+				temp_img = cv.CreateMat(img1.rows / 10, img1.cols / 10, cv.CV_8UC1)
+				cv.Resize(img1, temp_img) 
+				print "Resized to 40, 40"
+			img1 = gray_images(img1)
+			imageclassid = filename1.rsplit('.')[0][-1]
+			classid = array(int(imageclassid[0]))
+			if imageclassid.isdigit():
+				print "Image class: ", imageclassid
+				f_handle = open("coin_date_classid.txt", 'a')
+				f_handle.write(str(classid))
+				f_handle.write(' ')
+				f_handle.close()
 				
-				im.show()
-				print Green_Band
-				Green_Band.show()
-				#print "Saving color bands...."
-				#filename = filename1.rsplit('.')[0] + "_RedBand.bmp"
-				#print filename1.rsplit('.')[0][-1]
-				imageclassid = filename1.rsplit('.')[0][-1]
-				classid = array(int(imageclassid[0]))
-				if imageclassid.isdigit():
-					print "Image class: ", imageclassid
-					f_handle = open("greenbandclassid.txt", 'a')
-					f_handle.write(str(classid))
-					f_handle.write(' ')
-					f_handle.close()
-					
-					#calculate histogram
-					print "Calculating Histogram for the green pixels of image..."
-					Histogram = CalcHistogram(Green_Band)
-					#save Green Histogram to file in certain format
-					print "saving histogram to dictionary..."
-					f_handle = open("greenbanddata.txt", 'a')
-					for i in range(len(Histogram)):
-						f_handle.write(str(Histogram[i]))
-						f_handle.write(" ")
-					f_handle.write('\n')
-					f_handle.close()
-				#print "Saving.....", filename 
-				#Red_Band.save(filename, "BMP")
-				#filename = filename1.rsplit('.')[0] + "_GreenBand.bmp"
-					print "calling i3"
-					I3image = rgb2I3(im)
-					#calculate histogram
-					print "Calculating Histogram for I3 pixels of image..."
-					Red_Band, Green_Band, Blue_Band = I3image.split()
-					Histogram = CalcHistogram(Green_Band)
-					#save I3 Histogram to file in certain format
-					f_handle = open("I3bandclassid.txt", 'a')
-					f_handle.write(str(classid))
-					f_handle.write(' ')
-					f_handle.close()
-					print "saving I3 histogram to dictionary..."
-					f_handle = open("I3banddata.txt", 'a')
-					for i in range(len(Histogram)):
-						f_handle.write(str(Histogram[i]))
-						f_handle.write(" ")
-					f_handle.write('\n')
-					f_handle.close()
+				#calculate histogram
+				print "Calculating Histogram for the green pixels of image..."
+				Histogram = CalcHistogram(Green_Band)
+				#save Green Histogram to file in certain format
+				print "saving histogram to dictionary..."
+				f_handle = open("greenbanddata.txt", 'a')
+				for i in range(len(Histogram)):
+					f_handle.write(str(Histogram[i]))
+					f_handle.write(" ")
+				f_handle.write('\n')
+				f_handle.close()
+			#print "Saving.....", filename 
+			#Red_Band.save(filename, "BMP")
+			#filename = filename1.rsplit('.')[0] + "_GreenBand.bmp"
+				print "calling i3"
+				I3image = rgb2I3(im)
+				#calculate histogram
+				print "Calculating Histogram for I3 pixels of image..."
+				Red_Band, Green_Band, Blue_Band = I3image.split()
+				Histogram = CalcHistogram(Green_Band)
+				#save I3 Histogram to file in certain format
+				f_handle = open("I3bandclassid.txt", 'a')
+				f_handle.write(str(classid))
+				f_handle.write(' ')
+				f_handle.close()
+				print "saving I3 histogram to dictionary..."
+				f_handle = open("I3banddata.txt", 'a')
+				for i in range(len(Histogram)):
+					f_handle.write(str(Histogram[i]))
+					f_handle.write(" ")
+				f_handle.write('\n')
+				f_handle.close()
 
 
