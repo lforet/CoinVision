@@ -30,8 +30,23 @@ def digitlist(value, numdigits=8, base=2):
 	for i in range(numdigits):
 		val, digits[i] = divmod(val, base)
 		return_str = return_str + str(digits[i])
-	print return_str
+	#return_str = shift_string(return_str, numdigits-1)
 	return digits
+
+def shift_string(lst, n):
+	first = (-n) % len(lst)
+	result = list(lst[first:]) # if lst is a iterable but not a list
+	result.extend(lst[:first])
+	result = reduce(lambda x,y: x+y,result)
+	return result
+
+def get_uniform_variations(x):
+	l = digitlist(x)
+	l = reduce(lambda x,y: str(x) +str(y),l)
+	l= shift_string(l, len(l)-1)
+	for c in range(len(l)):
+		print l, int(l, 2)
+		l = shift_string(l, 1)
 
 def is_uniformLBP(digits):
 	a = digits[0]
@@ -73,7 +88,7 @@ def CalcLBP(img):
 	grayimage = ImageOps.grayscale(img)
 	#make a copy to return
 	returnimage = Image.new("L", (xmax,ymax))
-	uniform_hist = numpy.zeros(256)
+	uniform_hist = numpy.zeros(256, int)
 	print "uniform_hist = ", uniform_hist
 	print "size = ", uniform_hist.ndim
 	meanRGB = 0
@@ -104,12 +119,19 @@ def CalcLBP(img):
 			#putpixel adds 1 second vs storing to array
 			uniform = is_uniformLBP( digitlist(lbp, numdigits=8, base=2))
 			print "lbp = ", lbp, " bits = ", decimal2binary(lbp), digitlist(lbp, numdigits=8, base=2), " is_uniformLBP(digits) = ", uniform
-			
-			#if uniform[1] == False:
-			uniform_hist[lbp] = uniform_hist[lbp] +1
+			get_uniform_variations(lbp)
+			if uniform[1] == True:
+				uniform_hist[lbp] = uniform_hist[lbp] +1
+			else:	
+				uniform_hist[255] = uniform_hist[255] +1
 			#time.sleep(1)
 			returnimage.putpixel((x,y), lbp)
 	print uniform_hist
+	count = 0
+	for a in uniform_hist:
+		if a > 0: count = count + 1
+	print "count = ", count
+	
 	print returnimage.histogram()
 	return returnimage
 
@@ -230,6 +252,9 @@ if __name__=="__main__":
 			lbp_img = CalcLBP(pil_img1)
 			#cv.ShowImage("img2_copy ", img2_copy )
 			#cv.ShowImage("cropped_img1 ", cropped_img1 )
+			cv.WaitKey()
+			pil_img1 = Image.fromstring("L", cv.GetSize(img2_copy), img2_copy.tostring())
+			lbp_img = CalcLBP(pil_img1)
 			cv.WaitKey()
 		    #box = (xx, yy, xx+xsegs, yy+ysegs)
 			#print box
