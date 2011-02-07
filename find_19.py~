@@ -98,7 +98,7 @@ def get_LBP_uniform_histogram(lbp_list):
 		transition_count = is_uniformLBP(binary_string)[0]
 		ones_count = count_ones_in_string(binary_string)
 		consecutive_ones = count_consecutive_ones(binary_string)
-		print n, binary_string , transition_count, ones_count, consecutive_ones
+		#print n, binary_string , transition_count, ones_count
 		if (transition_count == 0) & (ones_count == 8):
 			histo[0] = histo[0] + 1
 		if (transition_count == 2) & (ones_count == 7):
