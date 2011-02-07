@@ -46,9 +46,11 @@ def get_uniform_variations(x):
 	#print "reversed = ", l.reverse(), digitlist(x).reverse()
 	l = reduce(lambda x,y: str(x) +str(y),l)
 	l= shift_string(l, len(l)-1)
+	print 'if',
 	for c in range(len(l)):
-		print l, int(l, 2)
+		print  'n ==', int(l, 2), 'or', 
 		l = shift_string(l, 1)
+	print ':histo[1] = histo[1] + 1'
 
 def is_uniformLBP(digits):
 	a = digits[0]
@@ -99,30 +101,31 @@ def get_LBP_uniform_histogram(lbp_list):
 		ones_count = count_ones_in_string(binary_string)
 		consecutive_ones = count_consecutive_ones(binary_string)
 		print n, binary_string , transition_count, ones_count, consecutive_ones
-		if (transition_count == 0) & (ones_count == 8):
-			histo[0] = histo[0] + 1
-		if (transition_count == 2) & (ones_count == 7):
-			histo[1] = histo[1] + 1
-		if (transition_count == 2) & (ones_count == 6):
-			histo[2] = histo[2] + 1
-		if (transition_count == 2) & (ones_count == 5):
-			histo[3] = histo[3] + 1
-		if (transition_count == 2) & (ones_count == 4):
-			histo[4] = histo[4] + 1
-		if (transition_count == 2) & (ones_count == 3):
-			histo[5] = histo[5] + 1
-		if (transition_count == 2) & (ones_count == 2):
-			histo[6] = histo[6] + 1
-		if (transition_count == 2) & (ones_count == 1):
-			histo[7] = histo[7] + 1
-		if (transition_count == 0) & (ones_count == 0):
-			histo[8] = histo[8] + 1
-		if (transition_count == 0) & (ones_count == 0):
-			histo[8] = histo[8] + 1
+		#if (transition_count == 0) & (ones_count == 8):
+		#	histo[0] = histo[0] + 1
+		if n == 255:histo[0] = histo[0] + 1
+		if n == 253 or n == 254 or n == 127 or n == 191 or n == 223 or n == 239 or n == 247 or n == 251 :histo[1] = histo[1] + 1
+		if n == 249 or n == 252 or n == 126 or n == 63 or n == 159 or n == 207 or n == 231 or n == 243 :histo[2] = histo[2] + 1
+		if n == 241 or n == 248 or n == 124 or n == 62 or n == 31 or n == 143 or n == 199 or n == 227 :histo[3] = histo[3] + 1
+i		if n == 225 or n == 240 or n == 120 or n == 60 or n == 30 or n == 15 or n == 135 or n == 195 :histo[4] = histo[4] + 1
+		if n == 193 or n == 224 or n == 112 or n == 56 or n == 28 or n == 14 or n == 7 or n == 131 :histo[5] = histo[5] + 1
+		if n == 129 or n == 192 or n == 96 or n == 48 or n == 24 or n == 12 or n == 6 or n == 3 :histo[6] = histo[6] + 1
+		if n == 1 or n == 128 or n == 64 or n == 32 or n == 16 or n == 8 or n == 4 or n == 2 :histo[7] = histo[7] + 1
+		if n == 0:histo[8] = histo[8] + 1
+		if n == 245 or n == 250 or n == 125 or n == 190 or n == 95 or n == 175 or n == 215 or n == 235 :histo[9] = histo[9] + 1
+		if n == 237 or n == 246 or n == 123 or n == 189 or n == 222 or n == 111 or n == 183 or n == 219 :histo[10] = histo[10] + 1
+		if n == 221 or n == 238 or n == 119 or n == 187 or n == 221 or n == 238 or n == 119 or n == 187 :histo[11] = histo[11] + 1
+		if n == 233 or n == 244 or n == 122 or n == 61 or n == 158 or n == 79 or n == 167 or n == 211 :histo[12] = histo[12] + 1
+		if n == 229 or n == 242 or n == 121 or n == 188 or n == 94 or n == 47 or n == 151 or n == 203 :histo[13] = histo[13] + 1
+		if n == 217 or n == 236 or n == 118 or n == 59 or n == 157 or n == 206 or n == 103 or n == 179 :histo[14] = histo[14] + 1
+		if n == 213 or n == 234 or n == 117 or n == 186 or n == 93 or n == 174 or n == 87 or n == 171 :histo[15] = histo[15] + 1
+		if n == 205 or n == 230 or n == 115 or n == 185 or n == 220 or n == 110 or n == 55 or n == 155 :histo[16] = histo[16] + 1
+		if n == 181 or n == 218 or n == 109 or n == 182 or n == 91 or n == 173 or n == 214 or n == 107 :histo[1] = histo[1] + 1
 
 
 
 	print histo
+
 
 
 def CalcLBP(img, radius=1, neighborPixels=8):
