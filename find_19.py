@@ -120,10 +120,25 @@ i		if n == 225 or n == 240 or n == 120 or n == 60 or n == 30 or n == 15 or n == 
 		if n == 217 or n == 236 or n == 118 or n == 59 or n == 157 or n == 206 or n == 103 or n == 179 :histo[14] = histo[14] + 1
 		if n == 213 or n == 234 or n == 117 or n == 186 or n == 93 or n == 174 or n == 87 or n == 171 :histo[15] = histo[15] + 1
 		if n == 205 or n == 230 or n == 115 or n == 185 or n == 220 or n == 110 or n == 55 or n == 155 :histo[16] = histo[16] + 1
-		if n == 181 or n == 218 or n == 109 or n == 182 or n == 91 or n == 173 or n == 214 or n == 107 :histo[1] = histo[1] + 1
-
-
-
+		if n == 181 or n == 218 or n == 109 or n == 182 or n == 91 or n == 173 or n == 214 or n == 107 :histo[17] = histo[17] + 1
+		if n == 209 or n == 232 or n == 116 or n == 58 or n == 29 or n == 142 or n == 71 or n == 163  :histo[18] = histo[18] + 1
+		if n == 201 or n == 228 or n == 114 or n == 57 or n == 156 or n == 78 or n == 39 or n == 147  :histo[19] = histo[19] + 1
+		if n == 197 or n == 226 or n == 113 or n == 184 or n == 92 or n == 46 or n == 23 or n == 139  :histo[20] = histo[20] + 1
+		if n == 177 or n == 216 or n == 108 or n == 54 or n == 27 or n == 141 or n == 198 or n == 99  :histo[21] = histo[21] + 1
+		if n == 169 or n == 212 or n == 106 or n == 53 or n == 154 or n == 77 or n == 166 or n == 83  :histo[22] = histo[22] + 1
+		if n == 165 or n == 210 or n == 105 or n == 180 or n == 90 or n == 45 or n == 150 or n == 75 :histo[23] = histo[23] + 1
+		if n == 153 or n == 204 or n == 102 or n == 51 or n == 153 or n == 204 or n == 102 or n == 51 :histo[24] = histo[24] + 1
+		if n == 149 or n == 202 or n == 101 or n == 178 or n == 89 or n == 172 or n == 86 or n == 43  :histo[25] = histo[25] + 1
+		if n == 85 or n == 170 or n == 85 or n == 170 or n == 85 or n == 170 or n == 85 or n == 170  :histo[26] = histo[26] + 1
+		if n == 161 or n == 208 or n == 104 or n == 52 or n == 26 or n == 13 or n == 134 or n == 67  :histo[27] = histo[27] + 1
+		if n == 145 or n == 200 or n == 100 or n == 50 or n == 25 or n == 140 or n == 70 or n == 35  :histo[28] = histo[28] + 1
+		if n == 137 or n == 196 or n == 98 or n == 49 or n == 152 or n == 76 or n == 38 or n == 19  :histo[29] = histo[29] + 1
+		if n == 133 or n == 194 or n == 97 or n == 176 or n == 88 or n == 44 or n == 22 or n == 11  :histo[30] = histo[30] + 1
+		if n == 81 or n == 168 or n == 84 or n == 42 or n == 21 or n == 138 or n == 69 or n == 162 :histo[31] = histo[31] + 1
+		if n == 73 or n == 164 or n == 82 or n == 41 or n == 148 or n == 74 or n == 37 or n == 146  :histo[32] = histo[32] + 1
+		if n == 65 or n == 160 or n == 80 or n == 40 or n == 20 or n == 10 or n == 5 or n == 130  :histo[33] = histo[33] + 1
+		if n == 33 or n == 144 or n == 72 or n == 36 or n == 18 or n == 9 or n == 132 or n == 66 :histo[34] = histo[34] + 1
+		if n == 17 or n == 136 or n == 68 or n == 34 or n == 17 or n == 136 or n == 68 or n == 34 :histo[35] = histo[35] + 1
 	print histo
 
 
