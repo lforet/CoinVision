@@ -95,23 +95,24 @@ def count_consecutive_ones(digits):
 	
 def get_LBP_uniform_histogram(lbp_list):
 	histo = [0] * 36
+	print "len of lbp_list = ", len(lbp_list)
 	for n in lbp_list:
-		binary_string = digitlist(n)
-		transition_count = is_uniformLBP(binary_string)[0]
-		ones_count = count_ones_in_string(binary_string)
-		consecutive_ones = count_consecutive_ones(binary_string)
-		print n, binary_string , transition_count, ones_count, consecutive_ones
+		#binary_string = digitlist(n)
+		#transition_count = is_uniformLBP(binary_string)[0]
+		#ones_count = count_ones_in_string(binary_string)
+		#consecutive_ones = count_consecutive_ones(binary_string)
+		#print n, binary_string , transition_count, ones_count, consecutive_ones
 		#if (transition_count == 0) & (ones_count == 8):
 		#	histo[0] = histo[0] + 1
 		if n == 255:histo[0] = histo[0] + 1
 		if n == 253 or n == 254 or n == 127 or n == 191 or n == 223 or n == 239 or n == 247 or n == 251 :histo[1] = histo[1] + 1
 		if n == 249 or n == 252 or n == 126 or n == 63 or n == 159 or n == 207 or n == 231 or n == 243 :histo[2] = histo[2] + 1
 		if n == 241 or n == 248 or n == 124 or n == 62 or n == 31 or n == 143 or n == 199 or n == 227 :histo[3] = histo[3] + 1
-i		if n == 225 or n == 240 or n == 120 or n == 60 or n == 30 or n == 15 or n == 135 or n == 195 :histo[4] = histo[4] + 1
+		if n == 225 or n == 240 or n == 120 or n == 60 or n == 30 or n == 15 or n == 135 or n == 195 :histo[4] = histo[4] + 1
 		if n == 193 or n == 224 or n == 112 or n == 56 or n == 28 or n == 14 or n == 7 or n == 131 :histo[5] = histo[5] + 1
 		if n == 129 or n == 192 or n == 96 or n == 48 or n == 24 or n == 12 or n == 6 or n == 3 :histo[6] = histo[6] + 1
 		if n == 1 or n == 128 or n == 64 or n == 32 or n == 16 or n == 8 or n == 4 or n == 2 :histo[7] = histo[7] + 1
-		if n == 0:histo[8] = histo[8] + 1
+		if n == 0: histo[8] = histo[8] + 1
 		if n == 245 or n == 250 or n == 125 or n == 190 or n == 95 or n == 175 or n == 215 or n == 235 :histo[9] = histo[9] + 1
 		if n == 237 or n == 246 or n == 123 or n == 189 or n == 222 or n == 111 or n == 183 or n == 219 :histo[10] = histo[10] + 1
 		if n == 221 or n == 238 or n == 119 or n == 187 or n == 221 or n == 238 or n == 119 or n == 187 :histo[11] = histo[11] + 1
@@ -135,11 +136,13 @@ i		if n == 225 or n == 240 or n == 120 or n == 60 or n == 30 or n == 15 or n == 
 		if n == 137 or n == 196 or n == 98 or n == 49 or n == 152 or n == 76 or n == 38 or n == 19  :histo[29] = histo[29] + 1
 		if n == 133 or n == 194 or n == 97 or n == 176 or n == 88 or n == 44 or n == 22 or n == 11  :histo[30] = histo[30] + 1
 		if n == 81 or n == 168 or n == 84 or n == 42 or n == 21 or n == 138 or n == 69 or n == 162 :histo[31] = histo[31] + 1
-		if n == 73 or n == 164 or n == 82 or n == 41 or n == 148 or n == 74 or n == 37 or n == 146  :histo[32] = histo[32] + 1
-		if n == 65 or n == 160 or n == 80 or n == 40 or n == 20 or n == 10 or n == 5 or n == 130  :histo[33] = histo[33] + 1
-		if n == 33 or n == 144 or n == 72 or n == 36 or n == 18 or n == 9 or n == 132 or n == 66 :histo[34] = histo[34] + 1
-		if n == 17 or n == 136 or n == 68 or n == 34 or n == 17 or n == 136 or n == 68 or n == 34 :histo[35] = histo[35] + 1
-	print histo
+		if n == 73 or n == 164 or n == 82 or n == 41 or n == 148 or n == 74 or n == 37 or n == 146 :histo[32] = histo[32] + 1
+		if n == 65 or n == 160 or n == 80 or n == 40 or n == 20 or n == 10 or n == 5 or n == 130   :histo[33] = histo[33] + 1
+		if n == 33 or n == 144 or n == 72 or n == 36 or n == 18 or n == 9 or n == 132 or n == 66   :histo[34] = histo[34] + 1
+		if n == 17 or n == 136 or n == 68 or n == 34 or n == 17 or n == 136 or n == 68 or n == 34  :histo[35] = histo[35] + 1
+	#print histo
+	#print "sum of histo", sum(histo)
+	return histo
 
 
 
