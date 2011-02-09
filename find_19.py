@@ -206,9 +206,9 @@ def CalcLBP(img, radius=1, neighborPixels=8):
 			lbp_list.append(lbp)
 			#time.sleep(1)
 			returnimage.putpixel((x,y), lbp)
-	print "LBP LIST = ", lbp_list, "  count = ", len(lbp_list)
+	#print "LBP LIST = ", lbp_list, "  count = ", len(lbp_list)
 	LBP_Section_Histogram = get_LBP_uniform_histogram(lbp_list)
-	print 'LBP fingerprint for that section = ', LBP_Section_Histogram
+	#print 'LBP fingerprint for that section = ', LBP_Section_Histogram
 	#print returnimage.histogram()
 	#return returnimage
 	return LBP_Section_Histogram
@@ -252,14 +252,14 @@ def get_orientation(img1, img2):
 	for i in range(1, 360):
 		temp_img = rotate_image(img2, i)
 		cv.And(img1, temp_img , subtracted_image)
-		cv.ShowImage("subtracted_image", subtracted_image)
-		cv.ShowImage("Image of Interest", temp_img )
+		#cv.ShowImage("subtracted_image", subtracted_image)
+		#cv.ShowImage("Image of Interest", temp_img )
 		sum_of_and = cv.Sum(subtracted_image)
 		if best_sum == 0: best_sum = sum_of_and[0]
 		if sum_of_and[0] > best_sum: 
 			best_sum = sum_of_and[0]
 			best_orientation = i
-		print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
+		#print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
 		key = cv.WaitKey(5)
 		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
 			break
@@ -279,11 +279,11 @@ def get_LBP_fingerprint(img, sections = 8):
 	#print obj_width % xsegs, obj_height % ysegs
 	for yy in range(0,img_height-ysegs+1 , ysegs):
 		for xx in range(0,img_width-xsegs+1,xsegs):
-			print "Processing section =", xx, yy, xx+xsegs, yy+ysegs
+			#print "Processing section =", xx, yy, xx+xsegs, yy+ysegs
 			pt1 = (xx, yy)
 			pt2 = (xx+xsegs, yy+ysegs)
 			box = (xx, yy, xx+xsegs, yy+ysegs)
-			print box
+			#print box
 			cropped_img1 = img.crop(box)
 			#cv.Rectangle(ftf_copy, pt1, pt2, cv.CV_RGB(255, 255, 255), 1, 0)
 			#cropped_img1 = cv.GetSubRect(feature_to_find, (xx, yy,xsegs, ysegs))
@@ -293,8 +293,8 @@ def get_LBP_fingerprint(img, sections = 8):
 			#cv.ShowImage("ftf_copy", ftf_copy)
 			#cv.ShowImage("cropped_img1 ", cropped_img1 )
 			#cv.WaitKey()
-	print 'THE ENTIRE FINGERPRINT = ', fingerprint
-	#return 
+	#print 'THE ENTIRE FINGERPRINT = ', fingerprint
+	return fingerprint
 
 
 
@@ -332,43 +332,35 @@ if __name__=="__main__":
 	cv.Canny(img1_copy ,img1_copy  ,87,175, 3)
 	cv.Canny(ftf_copy,ftf_copy , 87,175, 3)
 
-	cv.ShowImage("img1_copy ", img1_copy )
-	cv.ShowImage("ftf_copy ", ftf_copy )
-	cv.WaitKey()
+	#cv.ShowImage("img1_copy ", img1_copy )
+	#cv.ShowImage("ftf_copy ", ftf_copy )
+	#cv.WaitKey()
 	best_sum = 0
 	best_orientation = (0,0)
 	best_hu = 0
-	hu2 = numpy.array(cv.GetHuMoments(cv.Moments(ftf_copy)))
+	hu2 = numpy.array(cv.GetHuMoments(cv.Moments(feature_to_find)))
+	
 
 	#get fingerprint for feature to find (the date)
 	pil_img1 = Image.fromstring("L", cv.GetSize(feature_to_find), feature_to_find.tostring())
-	pil_img1.show()
-	cv.WaitKey()
-
-	get_LBP_fingerprint(pil_img1, sections = 1)
-
-	cv.WaitKey()
+	#pil_img1.show()
+	#cv.WaitKey()
+	lbp_h1 = numpy.array(get_LBP_fingerprint(pil_img1, sections = 4))
+	#print type(h1), 'h1 = ', h1
+	#cv.WaitKey()
 	#pil_img1 = pil_img1.rotate(45)
-	pil_img1 = Image.fromstring("L", cv.GetSize(rotate_image(feature_to_find,5)), rotate_image(feature_to_find,5).tostring())
-	pil_img1.show()
-	cv.WaitKey()
+	#pil_img1 = Image.fromstring("L", cv.GetSize(rotate_image(feature_to_find,1)), rotate_image(feature_to_find,1).tostring())
+	#pil_img1.show()
 	
-	get_LBP_fingerprint(pil_img1, sections = 1)
-	
-	cv.WaitKey()
+	#h2 = numpy.array(get_LBP_fingerprint(pil_img1, sections = 1))
+	#print dist(h1, h2)
+	#print scipy.spatial.distance.euclidean(h1,h2)
+	#cv.WaitKey()
 
-for y in range (230, (img_height-obj_height), 1):
-	for x in range(420,(img_width-obj_width),1):	
-		#pt1 = [x,y]
-		#pt2 = [x+obj_width, y+obj_height]
-		#if (pt2[1] > img_height): pt2[1] = img_height
-		#if (pt2[0] > img_width): pt2[0] = img_width
-		#pt1 = tuple(pt1)
-		#pt2 = tuple(pt2)
-		#print pt1, pt2, pt2[0], img_width
-		#cv.Rectangle(img, pt1, pt2, (1,1,1), thickness=1, lineType=8, shift=0)
-		
-		cropped_img = cv.GetSubRect(img1_copy, (x, y, obj_width, obj_height))
+for y in range (220, (img_height-(obj_height*2.5)), 5):
+	for x in range(420,(img_width-(obj_width*2.5)), 5):	
+		edge_cropped_img = cv.GetSubRect(img1_copy, (x, y, obj_width, obj_height))
+		grey_cropped_img = cv.GetSubRect(host_img, (x, y, obj_width, obj_height))
 		#pp_cropped_img = cv.CreateImage( (obj_width, obj_height), 8, 1)
 		#cv.Copy(src_region, cropped)
 		#cv.Smooth(cropped_img , pp_cropped_img  , smoothtype=cv.CV_GAUSSIAN , param1=3, param2=3, param3=0, param4=0)
@@ -393,8 +385,8 @@ for y in range (230, (img_height-obj_height), 1):
 		#for ((xx, yy), size, response) in starpoints:
 		#	print "x=%d y=%d size=%d response=%d" % (xx, yy, size, response)
 		
-		pil_img1 = Image.fromstring("L", cv.GetSize(cropped_img), cropped_img .tostring())
-		pil_img2 = Image.fromstring("L", cv.GetSize(img2_copy), img2_copy.tostring())
+		#pil_img1 = Image.fromstring("L", cv.GetSize(edge_cropped_img), cropped_img .tostring())
+		#pil_img2 = Image.fromstring("L", cv.GetSize(img2_copy), img2_copy.tostring())
 		#s = 0
 		#print pil_img1.getbands()
 		#for band_index, band in enumerate(img1.getbands()):
@@ -403,8 +395,8 @@ for y in range (230, (img_height-obj_height), 1):
 	#		s += numpy.sum(numpy.abs(m1-m2))
 		#h1 = numpy.array(img1.histogram())
 		#h2 = numpy.array(img2.histogram())
-		pixels1 = numpy.array(pil_img1)
-		pixels2 = numpy.array(pil_img2)
+		#pixels1 = numpy.array(pil_img1)
+		#pixels2 = numpy.array(pil_img2)
 		#a = numpy.array(cropped_hu)
 		#b = numpy.array(obj_hu)
 	    #obj_surf = numpy.array(flatten(obj_keypoints))
@@ -412,32 +404,45 @@ for y in range (230, (img_height-obj_height), 1):
 		#print b, sample_surf
 		#rms = math.sqrt(reduce(operator.add, map(lambda a,b: (a-b)**2, h1, h2))/len(h1))
 		#rms2 = math.sqrt(reduce(operator.add, map(lambda a,b: (a-b)**2, cropped_hu, obj_hu))/len(cropped_hu))
-		pixels_dist = dist(pixels1, pixels2)
+		#pixels_dist = dist(pixels1, pixels2)
 		
 		#print pixels_dist
 		#print "the root-mean-square (rms) dif =", rmsdiff(pil_img1, pil_img2)
 		#print scipy.spatial.distance.euclidean(pil_img1, pil_img2)
 		#print type(cropped_img), type(img2_copy)
-		#get_orientation (cropped_img, img2_copy)
-		subtracted_image = cv.CreateImage(cv.GetSize(img2_copy), 8, 1)
-		hu1 = numpy.array(cv.GetHuMoments(cv.Moments(cropped_img)))
-		
-		hu_dist = dist(hu1, hu2)
+
+		orientation = get_orientation (edge_cropped_img, ftf_copy)
+		#rotate edge_cropped_img 
+
+		subtracted_image = cv.CreateImage(cv.GetSize(ftf_copy), 8, 1)
+		#hu1 = numpy.array(cv.GetHuMoments(cv.Moments(grey_cropped_img)))
+		pil_img2 = Image.fromstring("L", cv.GetSize(grey_cropped_img), grey_cropped_img.tostring())
+		lbp_h2 = numpy.array(get_LBP_fingerprint(pil_img2, sections = 4))
+		hu_dist = dist(lbp_h1, lbp_h2)
+
 		if best_hu == 0: best_hu = hu_dist
 		if hu_dist < best_hu:
 			best_hu = hu_dist
+			cv.ShowImage("grey_cropped_img", grey_cropped_img)
+			#cv.ShowImage("feature_to_find", feature_to_find)
 			print "best_hu = ", best_hu
-			cv.WaitKey()
-
-		cv.And(cropped_img, img2_copy , subtracted_image)
-		cv.ShowImage("subtracted_image", subtracted_image)
+			cv.WaitKey(5)
+		cv.ShowImage("sample section image", grey_cropped_img)
+		cv.WaitKey(5)
+#print 'done best hu = ', best_hu
+		cv.And(edge_cropped_img, ftf_copy , subtracted_image)
+		
+		#cv.ShowImage("grey_cropped_img", grey_cropped_img)
+		#cv.WaitKey()
 		sum_of_and = cv.Sum(subtracted_image)
 		if best_sum == 0: best_sum = sum_of_and[0]
 		if sum_of_and[0] > best_sum: 
 			best_sum = sum_of_and[0]
 			best_orientation = (x,y)
-			print "NEW HIGH Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation	
-			cv.WaitKey(0)
+			print "NEW HIGH Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
+			cv.ShowImage("subtracted section image", grey_cropped_img)
+			cv.WaitKey(5)	
+			#cv.WaitKey()
 		#hu_dist = dist(b,a)
 		#hist_dist = dist(h1,h2)
 		#surf_dist = dist(sample_surf , obj_surf )
@@ -458,7 +463,7 @@ for y in range (230, (img_height-obj_height), 1):
 		#	print "result=%d " % result
 		#cv.ShowImage("match", match )
 		#cv.ShowImage("Object2",pp_obj_img)
-		cv.ShowImage("cropped", cropped_img )
+		#cv.ShowImage("cropped", cropped_img )
         #cv.ShowImage("canny", pp_cropped_img )
 		#dist_euclidean = sqrt(sum((img - obj_img)^2)) / img_size
 		#print dist_euclidean
@@ -476,4 +481,4 @@ for y in range (230, (img_height-obj_height), 1):
 
 
 
-cv.WaitKey(0)
+cv.WaitKey()
