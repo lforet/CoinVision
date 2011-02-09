@@ -41,16 +41,22 @@ def shift_string(lst, n):
 	return result
 
 def get_uniform_variations(x):
+	#this function gets all 8 variations of the bit pattern to establish the uniform pattern 
+	# for example: 00000001 is the same rotational invariant LBP as 00000010 and 00000100  
 	l = digitlist(x)
-	#print "digit list = ", l
+	l.reverse()
+	#print "digit list = ", l	
 	#print "reversed = ", l.reverse(), digitlist(x).reverse()
 	l = reduce(lambda x,y: str(x) +str(y),l)
-	l= shift_string(l, len(l)-1)
-	print 'if',
+	#print 'l now = ', l
+	#l= shift_string(l, len(l)-1)
+	#print 'l now = ', l
+	#print 'if',
 	for c in range(len(l)):
-		print  'n ==', int(l, 2), 'or', 
+		#print  'n ==', int(l, 2), 'or',
+		#print  'l = ', int(l, 2) 
 		l = shift_string(l, 1)
-	print ':histo[1] = histo[1] + 1'
+	#print ':histo[1] = histo[1] + 1'
 
 def is_uniformLBP(digits):
 	a = digits[0]
@@ -94,8 +100,9 @@ def count_consecutive_ones(digits):
 
 	
 def get_LBP_uniform_histogram(lbp_list):
+	# this function returns the histogram of the rotational invariant LBPs.  
 	histo = [0] * 36
-	print "len of lbp_list = ", len(lbp_list)
+	#print "len of lbp_list = ", len(lbp_list)
 	for n in lbp_list:
 		#binary_string = digitlist(n)
 		#transition_count = is_uniformLBP(binary_string)[0]
@@ -157,8 +164,8 @@ def CalcLBP(img, radius=1, neighborPixels=8):
 	#make a copy to return
 	returnimage = Image.new("L", (xmax,ymax))
 	uniform_hist = numpy.zeros(256, int)
-	print "uniform_hist = ", uniform_hist
-	print "size = ", uniform_hist.ndim
+	#print "uniform_hist = ", uniform_hist
+	#print "size = ", uniform_hist.ndim
 	meanRGB = 0
 	imagearray = grayimage.load()
 	neighborRGB = numpy.empty([8], dtype=int)
@@ -166,9 +173,10 @@ def CalcLBP(img, radius=1, neighborPixels=8):
 	radius = 1
 	angleStep = 360 / neighborPixels
  	lbp_list = []
-	for y in range(1, ymax-1, 1):				
+	for y in range(1, ymax-1, 1):
 		for x in range(1, xmax-1, 1):
 			centerRGB = imagearray[x, y]
+			#print 'Center Pixel = ', x, y
 			#meanRGB = centerRGB
 			index = 0
 			lbp = 0
@@ -176,32 +184,34 @@ def CalcLBP(img, radius=1, neighborPixels=8):
 				xx = round(x + radius * math.cos(math.radians(ang)))
 				yy = round(y + radius * math.sin(math.radians(ang)))
 				neighborRGB[index] = imagearray[xx,yy]
-				print xx, yy, index, centerRGB, neighborRGB[index]
+				#print 'pixel = ',xx, yy, 'neighbor# = ', index, 'center val = ', centerRGB, 'current pixel val = ', neighborRGB[index]
 				if imagearray[xx,yy] >= centerRGB:
 					lbp = lbp + (2**index)
 				index = index + 1
-			print "LBP = ", lbp
-			lbp = 0
-			for i in range(neighborPixels):
+			#print "LBP = ", lbp
+			#lbp = 0
+			#for i in range(neighborPixels):
 			#comparing against mean adds a sec vs comparing against center pixel
 				#if neighborRGB[i] >= meanRGB:
-				if neighborRGB[i] >= centerRGB:
-					lbp = lbp + (2**i)
+			#	if neighborRGB[i] >= centerRGB:
+			#		lbp = lbp + (2**i)
 			#comparing against mean adds a sec vs comparing against center pixel
 			#meanRGB= centerRGB + neighborRGB.sum()
 			#meanRGB = meanRGB / (neighbors+1)
 			#compute Improved local binary pattern (center pixel vs the mean of neighbors)
 			#putpixel adds 1 second vs storing to array
 			uniform = is_uniformLBP( digitlist(lbp, numdigits=8, base=2))
-			print "lbp = ", lbp, " bits = ", decimal2binary(lbp), digitlist(lbp, numdigits=8, base=2), " is_uniformLBP(digits) = ", uniform
+			#print "LBP = ", lbp, " bits = ", decimal2binary(lbp), digitlist(lbp, numdigits=8, base=2), " is_uniformLBP(digits) = ", uniform
 			get_uniform_variations(lbp)
 			lbp_list.append(lbp)
 			#time.sleep(1)
 			returnimage.putpixel((x,y), lbp)
 	print "LBP LIST = ", lbp_list, "  count = ", len(lbp_list)
-	get_LBP_uniform_histogram(lbp_list)
+	LBP_Section_Histogram = get_LBP_uniform_histogram(lbp_list)
+	print 'LBP fingerprint for that section = ', LBP_Section_Histogram
 	#print returnimage.histogram()
-	return returnimage
+	#return returnimage
+	return LBP_Section_Histogram
 
 def rotate_image(img, degrees):
 	"""
@@ -256,7 +266,35 @@ def get_orientation(img1, img2):
 		time.sleep(.05)
 	return (best_orientation)
 
-
+def get_LBP_fingerprint(img, sections = 8):
+	# - -------- this function takes and image and the number of sections to divide the image into (resolution of fingerprint)
+	# ---------- returns a concatenated histogram will be the 'fingerprint' of the feature to find (the date) image
+	img_size = img.size
+	img_width = img_size[0]
+	img_height = img_size[1]
+	xsegs = img_width  / sections
+	ysegs = img_height / sections
+	fingerprint = []
+	#print "xsegs, ysegs = ", xsegs, ysegs 
+	#print obj_width % xsegs, obj_height % ysegs
+	for yy in range(0,img_height-ysegs+1 , ysegs):
+		for xx in range(0,img_width-xsegs+1,xsegs):
+			print "Processing section =", xx, yy, xx+xsegs, yy+ysegs
+			pt1 = (xx, yy)
+			pt2 = (xx+xsegs, yy+ysegs)
+			box = (xx, yy, xx+xsegs, yy+ysegs)
+			print box
+			cropped_img1 = img.crop(box)
+			#cv.Rectangle(ftf_copy, pt1, pt2, cv.CV_RGB(255, 255, 255), 1, 0)
+			#cropped_img1 = cv.GetSubRect(feature_to_find, (xx, yy,xsegs, ysegs))
+			#pil_img1 = Image.fromstring("L", cv.GetSize(cropped_img1), cropped_img1.tostring())
+			#temp  = CalcLBP(cropped_img1)
+			fingerprint.extend(CalcLBP(cropped_img1))
+			#cv.ShowImage("ftf_copy", ftf_copy)
+			#cv.ShowImage("cropped_img1 ", cropped_img1 )
+			#cv.WaitKey()
+	print 'THE ENTIRE FINGERPRINT = ', fingerprint
+	#return 
 
 
 
@@ -288,50 +326,36 @@ if __name__=="__main__":
 
 
 	img1_copy = cv.CloneImage(host_img)
-	img2_copy = cv.CloneImage(feature_to_find)
+	ftf_copy = cv.CloneImage(feature_to_find)
 	cv.Smooth(img1_copy , img1_copy , cv.CV_GAUSSIAN,3, 3)
-	cv.Smooth(img2_copy , img2_copy , cv.CV_GAUSSIAN, 3, 3)
+	cv.Smooth(ftf_copy , ftf_copy, cv.CV_GAUSSIAN, 3, 3)
 	cv.Canny(img1_copy ,img1_copy  ,87,175, 3)
-	cv.Canny(img2_copy ,img2_copy , 87,175, 3)
+	cv.Canny(ftf_copy,ftf_copy , 87,175, 3)
 
 	cv.ShowImage("img1_copy ", img1_copy )
-	cv.ShowImage("img2_copy ", img2_copy )
+	cv.ShowImage("ftf_copy ", ftf_copy )
 	cv.WaitKey()
 	best_sum = 0
 	best_orientation = (0,0)
 	best_hu = 0
-	hu2 = numpy.array(cv.GetHuMoments(cv.Moments(img2_copy)))
+	hu2 = numpy.array(cv.GetHuMoments(cv.Moments(ftf_copy)))
 
-# - -------- segment the image and build LBP for image
-	segments = 8  
-	xsegs = obj_width  / segments
-	ysegs = obj_height / segments
-	print "xsegs, ysegs = ", xsegs, ysegs 
-	print obj_width % xsegs, obj_height % ysegs
-	for yy in range(0,obj_height-ysegs+1 , ysegs):
-		for xx in range(0,obj_width-xsegs+1,xsegs):
-			#j = raw_input("press any key")
-			#print "xx, yy =", xx, yy, xx+xsegs, yy+ysegs
-			pt1 = (xx, yy)
-			pt2 = (xx+xsegs, yy+ysegs)
-			#cv.Rectangle(img2_copy , pt1, pt2, cv.CV_RGB(255, 255, 255), 1, 0)
-			cropped_img1 = cv.GetSubRect(feature_to_find, (xx, yy,xsegs, ysegs))
-			pil_img1 = Image.fromstring("L", cv.GetSize(cropped_img1), cropped_img1.tostring())
-			lbp_img = CalcLBP(pil_img1)
-			#cv.ShowImage("img2_copy ", img2_copy )
-			#cv.ShowImage("cropped_img1 ", cropped_img1 )
-			cv.WaitKey()
-			pil_img1 = Image.fromstring("L", cv.GetSize(img2_copy), img2_copy.tostring())
-			lbp_img = CalcLBP(pil_img1)
-			cv.WaitKey()
-		    #box = (xx, yy, xx+xsegs, yy+ysegs)
-			#print box
-	#	    cell = PILimg.crop(box)
+	#get fingerprint for feature to find (the date)
+	pil_img1 = Image.fromstring("L", cv.GetSize(feature_to_find), feature_to_find.tostring())
+	pil_img1.show()
+	cv.WaitKey()
 
-	#	    CellPixels = list(cell.getdata())
+	get_LBP_fingerprint(pil_img1, sections = 1)
 
-
-
+	cv.WaitKey()
+	#pil_img1 = pil_img1.rotate(45)
+	pil_img1 = Image.fromstring("L", cv.GetSize(rotate_image(feature_to_find,5)), rotate_image(feature_to_find,5).tostring())
+	pil_img1.show()
+	cv.WaitKey()
+	
+	get_LBP_fingerprint(pil_img1, sections = 1)
+	
+	cv.WaitKey()
 
 for y in range (230, (img_height-obj_height), 1):
 	for x in range(420,(img_width-obj_width),1):	
