@@ -213,6 +213,26 @@ def CalcLBP(img, radius=1, neighborPixels=8):
 	#return returnimage
 	return LBP_Section_Histogram
 
+def get_SURF_points(img):
+	temp_img = cv.CloneMat(img)
+	keypoints = []
+	try:
+		storage = cv.CreateMemStorage() 
+		(keypoints, descriptors) = cv.ExtractSURF(temp_img , None, storage , (0, 40, 3, 4))
+		for ((xx, yy), laplacian, size, dir, hessian) in keypoints:
+			print "count= %d x=%d y=%d laplacian=%d size=%d dir=%f hessian=%f" % (len(keypoints), xx, yy, laplacian, size, dir, hessian)
+			cv.Circle(temp_img, (xx,yy), size, (255,0,0),1, cv.CV_AA , 0)
+	except Exception, e:
+    		print e
+
+	cv.ShowImage('SURF', temp_img )
+	cv.WaitKey()
+	cv.DestroyWindow('SURF')
+	if len(keypoints) > 0: 
+		return keypoints
+	else:
+		return -1		
+
 def rotate_image(img, degrees):
 	"""
     rotate(scr1, degrees) -> image
@@ -249,6 +269,7 @@ def get_orientation(img1, img2):
 
 	best_sum = 0
 	best_orientation = 0
+	print 'Starting to find best orientation'
 	for i in range(1, 360):
 		temp_img = rotate_image(img2, i)
 		cv.And(img1, temp_img , subtracted_image)
@@ -260,10 +281,11 @@ def get_orientation(img1, img2):
 			best_sum = sum_of_and[0]
 			best_orientation = i
 		#print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
-		key = cv.WaitKey(5)
-		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
+		#key = cv.WaitKey(5)
+		#if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
 			break
-		time.sleep(.05)
+		#time.sleep(.05)
+	print 'Finished finding best orientation'
 	return (best_orientation)
 
 def get_LBP_fingerprint(img, sections = 8):
@@ -296,7 +318,28 @@ def get_LBP_fingerprint(img, sections = 8):
 	#print 'THE ENTIRE FINGERPRINT = ', fingerprint
 	return fingerprint
 
+def flatten(x):
+    """flatten(sequence) -> list
 
+    Returns a single, flat list which contains all elements retrieved
+    from the sequence and all recursively contained sub-sequences
+    (iterables).
+
+    Examples:
+    >>> [1, 2, [3,4], (5,6)]
+    [1, 2, [3, 4], (5, 6)]
+    >>> flatten([[[1,2,3], (42,None)], [4,5], [6], 7, MyVector(8,9,10)])
+    [1, 2, 3, 42, None, 4, 5, 6, 7, 8, 9, 10]"""
+
+    result = []
+    for el in x:
+        #if isinstance(el, (list, tuple)):
+        if hasattr(el, "__iter__") and not isinstance(el, basestring):
+            result.extend(flatten(el))
+        else:
+            result.append(el)
+    return result
+#
 
 if __name__=="__main__":
 	
@@ -346,6 +389,8 @@ if __name__=="__main__":
 	#pil_img1.show()
 	#cv.WaitKey()
 	lbp_h1 = numpy.array(get_LBP_fingerprint(pil_img1, sections = 4))
+	feature_SURFpoints = numpy.array(flatten(get_SURF_points(cv.GetMat(feature_to_find))))
+
 	#print type(h1), 'h1 = ', h1
 	#cv.WaitKey()
 	#pil_img1 = pil_img1.rotate(45)
@@ -357,8 +402,8 @@ if __name__=="__main__":
 	#print scipy.spatial.distance.euclidean(h1,h2)
 	#cv.WaitKey()
 
-for y in range (220, (img_height-(obj_height*2.5)), 5):
-	for x in range(420,(img_width-(obj_width*2.5)), 5):	
+for y in range (220, (img_height-(obj_height*2)), 5):
+	for x in range(420,(img_width-(obj_width*2)), 5):	
 		edge_cropped_img = cv.GetSubRect(img1_copy, (x, y, obj_width, obj_height))
 		grey_cropped_img = cv.GetSubRect(host_img, (x, y, obj_width, obj_height))
 		#pp_cropped_img = cv.CreateImage( (obj_width, obj_height), 8, 1)
@@ -368,17 +413,7 @@ for y in range (220, (img_height-(obj_height*2.5)), 5):
 		#cv.Canny(pp_cropped_img, pp_cropped_img  , 50 , 150)
 		#cropped_hu =  cv.GetHuMoments(cv.Moments(pp_cropped_img)) 
 		
-		#try:
-		#	storage = cv.CreateMemStorage() 
-		#	(keypoints, descriptors) = cv.ExtractSURF(pp_cropped_img , None, storage , (1, 30, 3, 4))
-		#except Exception, e:
-        #		print e
-
-		#print len(obj_keypoints), len(obj_descriptors), len(keypoints), len(descriptors)
-		#print obj_keypoints[0]
-		#for ((xx, yy), laplacian, size, dir, hessian) in keypoints:
-		#	print "x=%d y=%d laplacian=%d size=%d dir=%f hessian=%f" % (xx, yy, laplacian, size, dir, hessian)
-			#cv.Circle(cropped_img, (xx,yy), size, (255,0,0),1, cv.CV_AA , 0)
+		section_SURFpoints =  numpy.array(flatten(get_SURF_points(grey_cropped_img)))
 		
 		#starpoints = cv.GetStarKeypoints(img, cv.CreateMemStorage(),)
 		#print len (starpoints )
@@ -411,37 +446,41 @@ for y in range (220, (img_height-(obj_height*2.5)), 5):
 		#print scipy.spatial.distance.euclidean(pil_img1, pil_img2)
 		#print type(cropped_img), type(img2_copy)
 
-		orientation = get_orientation (edge_cropped_img, ftf_copy)
-		#rotate edge_cropped_img 
 
-		subtracted_image = cv.CreateImage(cv.GetSize(ftf_copy), 8, 1)
 		#hu1 = numpy.array(cv.GetHuMoments(cv.Moments(grey_cropped_img)))
 		pil_img2 = Image.fromstring("L", cv.GetSize(grey_cropped_img), grey_cropped_img.tostring())
 		lbp_h2 = numpy.array(get_LBP_fingerprint(pil_img2, sections = 4))
 		hu_dist = dist(lbp_h1, lbp_h2)
 
+		surf_dist = dist(feature_SURFpoints,section_SURFpoints)
+
+		print 'surf_dist =', surf_dist
+		print 
 		if best_hu == 0: best_hu = hu_dist
 		if hu_dist < best_hu:
 			best_hu = hu_dist
 			cv.ShowImage("grey_cropped_img", grey_cropped_img)
 			#cv.ShowImage("feature_to_find", feature_to_find)
 			print "best_hu = ", best_hu
-			cv.WaitKey(5)
-		cv.ShowImage("sample section image", grey_cropped_img)
-		cv.WaitKey(5)
-#print 'done best hu = ', best_hu
-		cv.And(edge_cropped_img, ftf_copy , subtracted_image)
-		
-		#cv.ShowImage("grey_cropped_img", grey_cropped_img)
+			#found best LBP candidate so now subtraction on images
+			#orientation = get_orientation (edge_cropped_img, ftf_copy)
+			#edge_cropped_img = rotate_image(edge_cropped_img, orientation)
+			#subtracted_image = cv.CreateImage(cv.GetSize(ftf_copy), 8, 1)
+			#cv.ShowImage("sample section image", grey_cropped_img)
+			#cv.WaitKey(5)
+	#print 'done best hu = ', best_hu
+			#cv.And(edge_cropped_img, ftf_copy , subtracted_image)
+			#sum_of_and = cv.Sum(subtracted_image)
+			#if best_sum == 0: best_sum = sum_of_and[0]
+			#if sum_of_and[0] > best_sum: 
+			#	best_sum = sum_of_and[0]
+			#	best_orientation = (x,y)
+			#	print "NEW HIGH Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
+			#	cv.ShowImage("edge_cropped_img section image", edge_cropped_img )
+		cv.WaitKey(5)	
+		cv.ShowImage("current section", grey_cropped_img)
 		#cv.WaitKey()
-		sum_of_and = cv.Sum(subtracted_image)
-		if best_sum == 0: best_sum = sum_of_and[0]
-		if sum_of_and[0] > best_sum: 
-			best_sum = sum_of_and[0]
-			best_orientation = (x,y)
-			print "NEW HIGH Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
-			cv.ShowImage("subtracted section image", grey_cropped_img)
-			cv.WaitKey(5)	
+		
 			#cv.WaitKey()
 		#hu_dist = dist(b,a)
 		#hist_dist = dist(h1,h2)
