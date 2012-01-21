@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+#python find_center_of_coins.py  images/N1.jpg 5 500
 
 """
 public static IntPtr cvHoughCircles(
@@ -98,7 +98,8 @@ storage = cv.cvCreateMat(50, 1, cv.CV_32FC3)
 cv.cvSetZero(storage)
 
 #circles = cv.cvHoughCircles(grayimage, storage, cv.CV_HOUGH_GRADIENT, 2, grayimage.height/4, 150, 40, long(sys.argv[2]), long(sys.argv[3]))
-circles = cv.cvHoughCircles(grayimage, storage, cv.CV_HOUGH_GRADIENT, 2, 500, 200, 40, long(sys.argv[2]), long(sys.argv[3]))
+#circles = cv.cvHoughCircles(grayimage, storage, cv.CV_HOUGH_GRADIENT, 1, grayimage.height, 200, 40, long(sys.argv[2]), long(sys.argv[3]))
+circles = cv.cvHoughCircles(grayimage, storage, cv.CV_HOUGH_GRADIENT, 1, grayimage.width, 150, 40, long(sys.argv[2]), grayimage.width)
 
 print storage
 for i in storage:

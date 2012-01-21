@@ -273,18 +273,18 @@ def get_orientation(img1, img2):
 	for i in range(1, 360):
 		temp_img = rotate_image(img2, i)
 		cv.And(img1, temp_img , subtracted_image)
-		#cv.ShowImage("subtracted_image", subtracted_image)
-		#cv.ShowImage("Image of Interest", temp_img )
+		cv.ShowImage("subtracted_image", subtracted_image)
+		cv.ShowImage("Image of Interest", temp_img )
 		sum_of_and = cv.Sum(subtracted_image)
 		if best_sum == 0: best_sum = sum_of_and[0]
 		if sum_of_and[0] > best_sum: 
 			best_sum = sum_of_and[0]
 			best_orientation = i
-		#print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
+		print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "best_orientation =", best_orientation
 		#key = cv.WaitKey(5)
 		#if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
-			break
-		#time.sleep(.05)
+			#break
+		time.sleep(.05)
 	print 'Finished finding best orientation'
 	return (best_orientation)
 
@@ -375,9 +375,9 @@ if __name__=="__main__":
 	cv.Canny(img1_copy ,img1_copy  ,87,175, 3)
 	cv.Canny(ftf_copy,ftf_copy , 87,175, 3)
 
-	#cv.ShowImage("img1_copy ", img1_copy )
-	#cv.ShowImage("ftf_copy ", ftf_copy )
-	#cv.WaitKey()
+	cv.ShowImage("img1_copy ", img1_copy )
+	cv.ShowImage("ftf_copy ", ftf_copy )
+	cv.WaitKey()
 	best_sum = 0
 	best_orientation = (0,0)
 	best_hu = 0
@@ -386,13 +386,13 @@ if __name__=="__main__":
 
 	#get fingerprint for feature to find (the date)
 	pil_img1 = Image.fromstring("L", cv.GetSize(feature_to_find), feature_to_find.tostring())
-	#pil_img1.show()
-	#cv.WaitKey()
+	pil_img1.show()
+	cv.WaitKey()
 	lbp_h1 = numpy.array(get_LBP_fingerprint(pil_img1, sections = 4))
 	feature_SURFpoints = numpy.array(flatten(get_SURF_points(cv.GetMat(feature_to_find))))
 
 	#print type(h1), 'h1 = ', h1
-	#cv.WaitKey()
+	cv.WaitKey()
 	#pil_img1 = pil_img1.rotate(45)
 	#pil_img1 = Image.fromstring("L", cv.GetSize(rotate_image(feature_to_find,1)), rotate_image(feature_to_find,1).tostring())
 	#pil_img1.show()
@@ -452,34 +452,34 @@ for y in range (220, (img_height-(obj_height*2)), 5):
 		lbp_h2 = numpy.array(get_LBP_fingerprint(pil_img2, sections = 4))
 		hu_dist = dist(lbp_h1, lbp_h2)
 
-		surf_dist = dist(feature_SURFpoints,section_SURFpoints)
+		#surf_dist = dist(feature_SURFpoints,section_SURFpoints)
 
-		print 'surf_dist =', surf_dist
-		print 
+		#print 'surf_dist =', surf_dist
+		
 		if best_hu == 0: best_hu = hu_dist
 		if hu_dist < best_hu:
 			best_hu = hu_dist
 			cv.ShowImage("grey_cropped_img", grey_cropped_img)
-			#cv.ShowImage("feature_to_find", feature_to_find)
+			cv.ShowImage("feature_to_find", feature_to_find)
 			print "best_hu = ", best_hu
 			#found best LBP candidate so now subtraction on images
-			#orientation = get_orientation (edge_cropped_img, ftf_copy)
-			#edge_cropped_img = rotate_image(edge_cropped_img, orientation)
-			#subtracted_image = cv.CreateImage(cv.GetSize(ftf_copy), 8, 1)
-			#cv.ShowImage("sample section image", grey_cropped_img)
-			#cv.WaitKey(5)
+			orientation = get_orientation (edge_cropped_img, ftf_copy)
+			edge_cropped_img = rotate_image(edge_cropped_img, orientation)
+			subtracted_image = cv.CreateImage(cv.GetSize(ftf_copy), 8, 1)
+			cv.ShowImage("sample section image", grey_cropped_img)
+			cv.WaitKey(5)
 	#print 'done best hu = ', best_hu
-			#cv.And(edge_cropped_img, ftf_copy , subtracted_image)
-			#sum_of_and = cv.Sum(subtracted_image)
-			#if best_sum == 0: best_sum = sum_of_and[0]
-			#if sum_of_and[0] > best_sum: 
-			#	best_sum = sum_of_and[0]
-			#	best_orientation = (x,y)
-			#	print "NEW HIGH Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
-			#	cv.ShowImage("edge_cropped_img section image", edge_cropped_img )
+			cv.And(edge_cropped_img, ftf_copy , subtracted_image)
+			sum_of_and = cv.Sum(subtracted_image)
+			if best_sum == 0: best_sum = sum_of_and[0]
+			if sum_of_and[0] > best_sum: 
+				best_sum = sum_of_and[0]
+				best_orientation = (x,y)
+				print "NEW HIGH Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "  best_orientation =", best_orientation
+				cv.ShowImage("edge_cropped_img section image", edge_cropped_img )
 		cv.WaitKey(5)	
 		cv.ShowImage("current section", grey_cropped_img)
-		#cv.WaitKey()
+		cv.WaitKey()
 		
 			#cv.WaitKey()
 		#hu_dist = dist(b,a)
@@ -503,7 +503,7 @@ for y in range (220, (img_height-(obj_height*2)), 5):
 		#cv.ShowImage("match", match )
 		#cv.ShowImage("Object2",pp_obj_img)
 		#cv.ShowImage("cropped", cropped_img )
-        #cv.ShowImage("canny", pp_cropped_img )
+                #cv.ShowImage("canny", pp_cropped_img )
 		#dist_euclidean = sqrt(sum((img - obj_img)^2)) / img_size
 		#print dist_euclidean
 
