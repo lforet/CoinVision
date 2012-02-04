@@ -26,12 +26,14 @@ def on_trackbar1(position):
 	global img
 	global gray
 	global edges
+	print
 	print position, pos2, pos3, pos4, pos5, pos6, pos7
 
 	temp = cv.cvCloneImage(img)
 	gray = cv.cvCreateImage(cv.cvGetSize(temp), 8, 1)	
 	edges = cv.cvCreateImage(cv.cvGetSize(temp), 8, 1)
 	dst =  cv.cvCreateImage( cv.cvSize(256,256), 8, 3 )
+	
 
 	src = cv.cvCloneImage(img)
 	src2 = cv.cvCreateImage( cv.cvGetSize(src), 8, 3 );
@@ -46,47 +48,62 @@ def on_trackbar1(position):
 		circles = cv.cvHoughCircles(gray, storage, cv.CV_HOUGH_GRADIENT, 1, float(pos3), float(pos2), float(pos4), long(pos5),long(pos6) )
 		#print storage
 		for i in storage:
-			print i[0], i[1], i[2]
+			print "Center: ", i[0], i[1], "  Radius: ", i[2]
 			center = cv.cvRound(i[0]), cv.cvRound(i[1])
 			radius = cv.cvRound(i[2])
 			cv.cvCircle(temp, (center), radius, cv.CV_RGB(255, 0, 0), 1, cv.CV_AA, 0 ) 
 			cv.cvCircle(edges, (center), radius, cv.CV_RGB(255, 255, 255), 1, cv.CV_AA, 0 ) 
 			if radius > 200:
+				print "Circle found over 200 Radius"
+				center_crop_topleft = (center[0]-(radius - pos7)), (center[1]-(radius - pos7))
+				center_crop_bottomright = (center[0]+(radius - pos7)), (center[1]+(radius - pos7))
+				print "crop top left:     ", center_crop_topleft
+				print "crop bottom right: ", center_crop_bottomright
+				center_crop = cv.cvGetSubRect(src, (center_crop_topleft[0], center_crop_topleft[1] , (center_crop_bottomright[0] - center_crop_topleft[0]), (center_crop_bottomright[1] - center_crop_topleft[1])  ))
+				#center_crop = cv.cvGetSubRect(src, (50, 50, radius/2, radius/2))
+				cvShowImage( "center_crop", center_crop )
+				print "center_crop created"
+				
+
+				#mark found circle's center with blue point and blue circle of pos 7 radius
 				cv.cvCircle(temp ,(center), 2, cv.CV_RGB(0, 0, 255), 3, cv.CV_AA, 0 ) 	
 				cv.cvCircle(temp ,(center), (radius - pos7), cv.CV_RGB(0, 0, 255), 3, cv.CV_AA, 0 ) 
-				cvLogPolar(src, dst, (center), 48, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS )
-
-				img_size = cvGetSize(dst)
-				pos7 = int(pos7 /2.5)
+				#cvLogPolar(src, dst, (center), 48, CV_INTER_LINEAR	+CV_WARP_FILL_OUTLIERS )
+				#this will draw a smaller cirle outlining the center circle				
+				#pos7 = int(pos7 /2.5)
 				#cv.cvCircle(dst  ,(img_size.width-pos7, 0), 2, cv.CV_RGB(0, 0, 255), 3, cv.CV_AA, 0 )
-				cv.cvLine(dst, (img_size.width-pos7-1, 0), (img_size.width-pos7-1, img_size.height), cv.CV_RGB(0, 0, 255),1,8,0)
-				cvShowImage( "log-polar", dst )
+				#cv.cvLine(dst, (img_size.width-pos7-1, 0), (img_size.width-pos7-1, img_size.height), cv.CV_RGB(0, 0, 255),1,8,0)
+				#cvShowImage( "log-polar", dst )
 				
 				
-				print radius, (radius-pos7)
+				#print radius, (radius-pos7)
 				
-				cropped = cv.cvCreateImage( (pos7, img_size.height), 8, 3)
-				cropped2 = cv.cvCreateImage( (pos7, img_size.height), 8, 3)
+				#cropped = cv.cvCreateImage( (pos7, img_size.height), 8, 3)
+				#cropped2 = cv.cvCreateImage( (pos7, img_size.height), 8, 3)
 				
-				coin_edge_img = cv.cvGetSubRect(dst, (img_size.width-pos7, 0, pos7 ,img_size.height ))
-				cvCopy(coin_edge_img, cropped)
-				cvSaveImage("temp.png", cropped)
-				im = Image.open("temp.png").rotate(90)
-				print "pil image size = ", im.size[0], im.size[1]
-				im = im.resize((im.size[0]*2, im.size[1]*2))
+				#coin_edge_img = cv.cvGetSubRect(dst, (img_size.width-pos7, 0, pos7 ,img_size.height ))
+
+				#to create the center cropped part of coin
+				#img_size = cvGetSize(scr)
+
+				#cvCopy(coin_edge_img, cropped)
+				#cvSaveImage("temp.png", cropped)
+				#im = Image.open("temp.png").rotate(90)
+				#print "pil image size = ", im.size[0], im.size[1]
+				#im = im.resize((im.size[0]*2, im.size[1]*2))
 				#print "pil image size = ", im.size
 				#im.show()
-				im.save("temp2.png")
-				cropped2 = highgui.cvLoadImage("temp2.png")
-                                cvShowImage( "cropped", cropped2)
+				#im.save("temp2.png")
+				#cropped2 = highgui.cvLoadImage("temp2.png")
+                                #cvShowImage( "cropped", cropped2)
 
 	except:
-		print sys.exc_info()[0] 
-		print position, pos2, pos3, pos4, pos5, pos6
+		print "Exception:", sys.exc_info()[0] 
+		print position, pos2, pos3, pos4, pos5, pos6, pos7
 		pass
 
 	highgui.cvShowImage("edges", edges)
-	cvShowImage( "log-polar", dst )
+	#cvShowImage( "log-polar", dst )
 	cvShowImage(wname, temp)
 	#cvShowImage( "cropped", cropped2)
 	
@@ -134,7 +151,7 @@ def on_mouse( event, x, y, flags, param ):
     if event==CV_EVENT_LBUTTONDOWN:
         cvLogPolar( src, dst, cvPoint2D32f(x,y), 40, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS );
         #cvLogPolar( dst, src2, cvPoint2D32f(x,y), 40, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS+CV_WARP_INVERSE_MAP );
-        cvShowImage( "log-polar", dst );
+        #cvShowImage( "log-polar", dst );
         #cvShowImage( "inverse log-polar", src2 );
 
 
@@ -163,14 +180,14 @@ if __name__ == "__main__":
 	highgui.cvSetTrackbarPos("Canny1", wname, pos1)
 	on_trackbar1(pos1)
 
-	highgui.cvNamedWindow( "original",1 );
-	highgui.cvNamedWindow( "log-polar", 1 );
+	#highgui.cvNamedWindow( "original",1 );
+	#highgui.cvNamedWindow( "log-polar", 1 );
 	#highgui.cvNamedWindow( "inverse log-polar", 1 );
 
 	dst = cv.cvCreateImage( cv.cvSize(256,256), 8, 3 );
 	src = cv.cvCloneImage(img)
 	src2 = cv.cvCreateImage( cv.cvGetSize(src), 8, 3 );
-        cvShowImage( "original", src );
+        #cvShowImage( "original", src );
 	highgui.cvSetMouseCallback( "original", on_mouse );
 	on_mouse( CV_EVENT_LBUTTONDOWN, src.width/2, src.height/2, None, None)
 
