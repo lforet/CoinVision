@@ -9,7 +9,14 @@ import numpy
 import scipy.spatial
 import time
 
-
+def resize_img(original_img, scale_percentage):
+		print original_img.height, original_img.width, original_img.nChannels
+		#resized_img = cv.CreateMat(original_img.rows * scale_percentage , original.cols * scale_percenta, cv.CV_8UC3)
+		resized_img = cv.CreateImage((original_img.width * scale_percentage , original_img.height * scale_percentage), original_img.depth, original_img.nChannels)
+		cv.Resize(original_img, resized_img)
+		#cv.ShowImage("original_img", original_img)
+		#cv.ShowImage("resized_img", resized_img)
+		#cv.WaitKey()
 
 def decimal2binary(n):
     """convert denary integer n to binary string bStr"""
@@ -44,6 +51,10 @@ def array2image(arry):
 	#Create image from array
 	return Image.fromarray(arry)
 
+def PILtoCV(PIL_img):
+	cv_img = cv.CreateImageHeader(PIL_img.size, cv.IPL_DEPTH_8U, 1)
+	cv.SetData(cv_img, img.tostring())
+	return cv_img
 
 def CVtoPIL(img):
 	"""converts CV image to PIL image"""
