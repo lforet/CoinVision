@@ -8,7 +8,7 @@ from PIL import Image
 import numpy 
 import time
 import scipy.spatial
-
+import ImageChops
 
 def decimal2binary(n):
     '''convert denary integer n to binary string bStr'''
@@ -54,6 +54,18 @@ def array2image(a):
 	return Image.fromarray(a)
 
 
+def rmsdiff(im1, im2):
+    "Calculate the root-mean-square difference between two images"
+
+    h = ImageChops.difference(im1, im2).histogram()
+
+    # calculate rms
+    return math.sqrt(reduce(operator.add,
+        map(lambda h, i: h*(i**2), h, range(256))
+    ) / (float(im1.size[0]) * im1.size[1]))
+
+
+
 def CalcLBP(img):
 	#Function to calculate local binary pattern of an image 
 	#pass in a img
@@ -96,7 +108,7 @@ def CalcLBP(img):
 				#if neighborRGB[i] >= centerRGB:
 					lbp = lbp + (2**i)
 			#putpixel adds 1 second vs storing to array
-			print "lbp = ", lbp, " bits = ", decimal2binary(lbp), digitlist(lbp, numdigits=8, base=2), " is_uniformLBP(digits) = ", is_uniformLBP( digitlist(lbp, numdigits=8, base=2))
+			#print "lbp = ", lbp, " bits = ", decimal2binary(lbp), digitlist(lbp, numdigits=8, base=2), " is_uniformLBP(digits) = ", is_uniformLBP( digitlist(lbp, numdigits=8, base=2))
 			#time.sleep(1)
 			returnimage.putpixel((x,y), lbp)
 	return returnimage
@@ -111,46 +123,61 @@ img  = imread(sys.argv[1])
 print img.ndim
 img2 = scipy.mean(img,2) # to get a 2-D array
 #imshow(img2)
+
 print img2.ndim
 lbp1 = mahotas.features.lbp(img2, 1, 8, ignore_zeros=False)
 print lbp1.ndim
 print lbp1.size
-print lbp1
+print "mahotas lbp histogram: ", lbp1
 
-img4 = scipy.mean(img,2)
-img4 = array2image(img4)
-img4 = img4.rotate(45)
-img4 = image2array(img4)
-lbp2= mahotas.features.lbp(img4, 1, 8, ignore_zeros=False)
-img4 = array2image(img4)
 
 img2 = array2image(img2)
-img2.show()
 
-img3 = CalcLBP(img2)
-img3.show()
+for i in range (110,360,10):
+	img4 = scipy.mean(img,2)
+	img4 = array2image(img4)
+	img4 = img4.rotate(i)
+	img4 = image2array(img4)	
+	img4 = array2image(img4)
+	print "degrees: ", i, "  img2, img4:" ,scipy.spatial.distance.euclidean(img2, img4) 
+	print rmsdiff(img2, img4)
 
-h1 = numpy.array(img3.histogram())
-print h1
+lbp2 = mahotas.features.lbp(img4, 1, 8, ignore_zeros=False)
+img2 = array2image(img2)
+#imshow(img4)
 
-img4 = CalcLBP(img4)
-img4.show()
-h2 = numpy.array(img4.histogram())
-print h2.size
-h2[255] = h1[255]
-print h2
+#img3 = CalcLBP(img2)
+#imshow(img3)
 
-print lbp2
-print scipy.spatial.distance.euclidean(h1,h2)
-print scipy.spatial.distance.euclidean(lbp1, lbp2)
+#h1 = numpy.array(img3.histogram())
+#print h1
 
-h1 = img2.histogram()
-img5 = scipy.mean(img,2)
-img5 = array2image(img5)
-img5 = img5.rotate(45)
-h2 = img5.histogram()
-img5.show()
-print scipy.spatial.distance.euclidean(h1,h2)
+#img4 = CalcLBP(img4)
+#img4.show()
+#h2 = numpy.array(img4.histogram())
+#print h2.size
+#h2[255] = h1[255]
+#print h2
+
+print "lbp2: ", lbp2
+print "img2, img4:" ,scipy.spatial.distance.euclidean(img2, img4) 
+
+
+print lbp1.size, lbp1.shape, lbp1.ndim
+print "Euclidian dist lpb1 , lbp2: ", scipy.spatial.distance.euclidean(lbp1, lbp2)
+#print "euclidean:" ,scipy.spatial.distance.cdist( lbp1,  lbp2, 'euclidean')
+print "minkowski:" ,scipy.spatial.distance.minkowski (lbp1,lbp2,2)
+#print "seuclidean:" ,scipy.spatial.distance.seuclidean ( lbp1, lbp2, V= None )
+print "correlation:", scipy.spatial.distance.correlation ( lbp1,lbp2)
+print "braycurtis: ", scipy.spatial.distance.braycurtis (lbp1, lbp2)
+
+#h1 = img2.histogram()
+#img5 = scipy.mean(img,2)
+#img5 = array2image(img5)
+#img5 = img5.rotate(45)
+#h2 = img5.histogram()
+#img5.show()
+#print "Euclidian dist h1 , h2: ", scipy.spatial.distance.euclidean(h1,h2)
 
 #img1 = Image.fromstring("L", cv.GetSize(pp_obj_img), pp_obj_img.tostring())
 
