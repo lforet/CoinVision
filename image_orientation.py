@@ -74,66 +74,76 @@ def find_center_of_coin(img):
 	#print edges, img
 	cv.Smooth(img , edges , cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(edges, edges, 50, 100, 3)
-    	#cv.Smooth(edges, edges, cv.CV_GAUSSIAN, 3, 3)
-
+    #cv.Smooth(edges, edges, cv.CV_GAUSSIAN, 3, 3)
+	img_copy2 = cv.CloneImage(img_copy)
 	#cv.ShowImage("grayed center image", edges)
 	#cv.WaitKey()
 
 	best_circle = ((0,0),0)
-	for minRadius in range (160, 220, 2):
-		for maxRadius in range (236, 250, 4):
+	for minRadius in range (150, 205, 5):
+		#img_copy = cv.CloneImage(img_copy2)
+		for maxRadius in range (210, 240, 5):
 			#print "minRadius: ", minRadius, "  maxRadius: ", maxRadius
-			circles = cv.HoughCircles(edges, storage, cv.CV_HOUGH_GRADIENT, 1, img.width, 100, 30, minRadius, maxRadius)
+			circles = cv.HoughCircles(edges, storage, cv.CV_HOUGH_GRADIENT, 1, img.width, 100, 25, minRadius, maxRadius)
 
 			if len(np.asarray(storage)) > 0:
 				for i in range(0,len(np.asarray(storage))):
-	    				center = int(np.asarray(storage)[i][0][0]), int(np.asarray(storage)[i][0][1])
+					center = int(np.asarray(storage)[i][0][0]), int(np.asarray(storage)[i][0][1])
 					radius = int(np.asarray(storage)[i][0][2])
 					#print  center, radius	
-					if (radius > best_circle[1]) & (radius < 216) :
+					cv.Circle(img_copy, center, radius, cv.CV_RGB(255, 0, 0), 1, cv.CV_AA, 0 ) 
+					cv.Circle(img_copy, center, 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
+					cv.ShowImage("Center of Coin", img_copy)
+					cv.MoveWindow ('Center of Coin', 50 , (50 + (1 * (cv.GetSize(img_copy)[0])))) 
+					cv.WaitKey(5)
+					time.sleep(.01)
+					if (radius > best_circle[1]) & (radius < 226) :
 						best_circle = (center, radius)
 						print "Found Best Circle---Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], "   minRadius: ", minRadius, "  maxRadius: ", maxRadius
 						cv.Circle(img_copy, (best_circle[0]), best_circle[1], cv.CV_RGB(255, 0, 0), 1, cv.CV_AA, 0 ) 
 						cv.Circle(img_copy, (best_circle[0]), 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 ) 
 					   #cv.Circle(cannyedges, (center), radius, cv.CV_RGB(255, 255, 255), 1, cv.CV_AA, 0 )
 						cv.ShowImage("Center of Coin", img_copy)
+						cv.MoveWindow ('Center of Coin', 50 , (50 + (1 * (cv.GetSize(img_copy)[0]))))
 						#need code here to validate center found: like has to be within x,y of center of image
 						cv.WaitKey(10)
 						time.sleep(.01)
 						#cv.WaitKey()
+	print "done cirlces"
 	return best_circle
 
 def rmsdiff(img1, img2):
-    """Calculate the root-mean-square difference between two images"""
-
-    h = ImageChops.difference(img1, img2).histogram()
-
-    # calculate rms
-    return math.sqrt(reduce(operator.add,
-        map(lambda h, i: h*(i**2), h, range(256))
-    ) / (float(img1.size[0]) * img1.size[1]))
+    "Calculate the root-mean-square difference between two images"
+    diff = ImageChops.difference(img1, img2)
+    h = diff.histogram()
+    sq = (value*(idx**2) for idx, value in enumerate(h))
+    sum_of_squares = sum(sq)
+    rms = math.sqrt(sum_of_squares/float(img1.size[0] * img1.size[1]))
+    return rms
 
 def get_orientation_PIL1(img1, img2): 
 	best_rmsdiff = 99999999
 	best_orientation = 0
 	#diplay images
 	img1_cv = PILtoCV(img1_pil)
-	cv.ShowImage("img1_cv", img1_cv)
+	cv.ShowImage("PIL 1", img1_cv)
+	cv.MoveWindow ("PIL 1",500,100)
 	print 'Starting to find best orientation'
 	for i in range(1, 360):
 		#temp_img = rotate_image(img2, i)
 		temp_img = img2.rotate(i)
 		#result_img = ImageChops.difference(img1, img2)	
 		#ImageChops.subtract(image1, image2, scale, offset) => image
-		result = rmsdiff(img1, temp_img)	
+		result = rmsdiff(img1, temp_img)
+
 		#diplay images
 		img2_cv = PILtoCV(temp_img)
-		cv.ShowImage("img2_cv", img2_cv)
-
+		cv.ShowImage("PIL 2", img2_cv)
+		cv.MoveWindow ("PIL 2", 500, 600)
 		if result < best_rmsdiff: 
 			best_rmsdiff = result
 			best_orientation = i
-		print i, "result = ", result, "best_orientation =", best_orientation
+			print i, "result = ", result, "  best_orientation =", best_orientation
 		key = cv.WaitKey(5)
 		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
 			break
@@ -154,19 +164,19 @@ def get_orientation(img1, img2):
 		temp_img = rotate_image(img2, i)
 		cv.And(img1, temp_img , subtracted_image)
 		cv.ShowImage("Image of Interest", temp_img )
-		cv.MoveWindow ("Image of Interest", 700, 100)
+		cv.MoveWindow ("Image of Interest", (100 + 2*cv.GetSize(img1)[0]), 100)
 		cv.ShowImage("Subtracted_Image", subtracted_image)
-		cv.MoveWindow ("Subtracted_Image", 1000, 100)
+		cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1)[0]), (160 + cv.GetSize(img1)[1]) )
 		sum_of_and = cv.Sum(subtracted_image)
 		if best_sum == 0: best_sum = sum_of_and[0]
 		if sum_of_and[0] > best_sum: 
 			best_sum = sum_of_and[0]
 			best_orientation = i
-		#print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "best_orientation =", best_orientation
+			print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "best_orientation =", best_orientation
 		key = cv.WaitKey(5)
 		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
 			break
-		time.sleep(.05)
+		time.sleep(.01)
 	print 'Finished finding best orientation'
 	return (best_orientation)
 
@@ -209,18 +219,14 @@ if __name__=="__main__":
 	img2_width = img2_size[0]
 	img2_height = img2_size[1]
 
-	#resize_img(img1, 1.05)
-	#sys.exit(-1)
-
-
 	if img1_size <> img2_size:
 		print "Images must be of the same size........End Of Line/"
 		sys.exit(-1)
 
-
 	cv.ShowImage("Image 1", img1)
+	cv.MoveWindow ('Image 1',50 ,50 )
 	cv.ShowImage("Image 2", img2)
-	cv.MoveWindow ('Image 2', (1 + (1 * (cv.GetSize(img1)[0]))) , 140)
+	cv.MoveWindow ('Image 2', (50 + (1 * (cv.GetSize(img1)[0]))) , 50)
 	#cv.WaitKey()
 
 	img1_copy = cv.CloneImage(img1)
@@ -239,7 +245,7 @@ if __name__=="__main__":
 		img1_copy = resize_img(img1, scale)	
 		img2_copy = img2
 		print "Finding Center of Scaled Corrected Image 1..."
-		#coin1_center = find_center_of_coin(img1_copy)
+		coin1_center = find_center_of_coin(img1_copy)
 		#temp_img = SimpleCV.Image(sys.argv[1]).toGray()
 
 	#if second image is smaller than first	
@@ -249,14 +255,14 @@ if __name__=="__main__":
 		img2_copy = resize_img(img2, scale)
 		img1_copy = img1
 		print "Finding Center of Scaled Corrected Image 2..."
-		#coin2_center = find_center_of_coin(img2_copy)
+		coin2_center = find_center_of_coin(img2_copy)
 	
 		#temp_img = SimpleCV.Image(sys.argv[2]).toGray()
 
 	#find center of coins after rescaling
-	print "Finding center of both coins after rescaling....."
-	coin1_center = find_center_of_coin(img1_copy)
-	coin2_center = find_center_of_coin(img2_copy)
+	#print "Finding center of both coins after rescaling....."
+	#coin1_center = find_center_of_coin(img1_copy)
+	#coin2_center = find_center_of_coin(img2_copy)
 
 	"""
 		print "Image 2 must be scaled:", scale, "%"
@@ -268,19 +274,19 @@ if __name__=="__main__":
 		cv.CvtColor(scaled_img, temp_gray, cv.CV_RGB2GRAY)
 		temp_gray_copy = cv.CloneImage(temp_gray)
 	"""
-	cv.ShowImage("Image 1_copy", img1_copy)
-	cv.ShowImage("Image 2_copy", img2_copy)
+	#cv.ShowImage("Image 1_copy", img1_copy)
+	#cv.ShowImage("Image 2_copy", img2_copy)
 	#cv.WaitKey()
 	#sys.exit(-1)
 
 
 	#crop out center of coin based on found center
 	print "Cropping center of original and scaled corrected images..."
-	coin1_center_crop = center_crop(img1_copy, coin1_center, 50)
+	coin1_center_crop = center_crop(img1_copy, coin1_center, 70)
 	cv.ShowImage("Crop Center of Coin1", coin1_center_crop)
 	cv.MoveWindow ('Crop Center of Coin1', 100, 100)
 	#cv.WaitKey()
-	coin2_center_crop = center_crop(img2_copy, coin2_center, 50)
+	coin2_center_crop = center_crop(img2_copy, coin2_center, 70)
 	cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
 	cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin1_center_crop)[0])) )
 	#cv.WaitKey()
@@ -305,45 +311,52 @@ if __name__=="__main__":
 
 
 	#for i in range(50, 300, 50):
-	"""
-		img1_copy = cv.CloneMat(coin1_center_crop) 
-		img2_copy = cv.CloneMat(coin2_center_crop)
-		img1_pil = CVtoPIL(img1_copy)
-		img2_pil = CVtoPIL(img2_copy)
-		img1_pil = ImageOps.equalize(img1_pil) 
-		img2_pil = ImageOps.equalize(img2_pil)
-		img1_copy = PILtoCV(img1_pil)
-		img2_copy = PILtoCV(img2_pil)
+	i=190
+	img1_copy = cv.CloneMat(coin1_center_crop) 
+	img2_copy = cv.CloneMat(coin2_center_crop)
+	img1_pil = CVtoPIL(img1_copy)
+	img2_pil = CVtoPIL(img2_copy)
+	img1_pil = ImageOps.equalize(img1_pil) 
+	img2_pil = ImageOps.equalize(img2_pil)
+	img1_copy = PILtoCV(img1_pil)
+	img2_copy = PILtoCV(img2_pil)
+	print "Equalizing the histograms..."
+	cv.ShowImage("Image 1_copy", img1_copy)
+	cv.MoveWindow ('Image 1_copy', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
+	cv.ShowImage("Image 2_copy", img2_copy)
+	cv.MoveWindow ("Image 2_copy", (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (155 + (cv.GetSize(coin1_center_crop)[0])) )
+	cv.WaitKey()
+	#time.sleep(2)
 
-		#cv.ShowImage("Image 1_copy", img1_copy)
-		#cv.ShowImage("Image 2_copy", img2_copy)
-		#cv.WaitKey()
-		cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
-		cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
-		cv.Erode(img1_copy, img1_copy , element=None, iterations=1)
-		cv.Erode(img2_copy, img2_copy , element=None, iterations=1)
-		cv.Canny(img1_copy ,img1_copy  ,cv.Round((i/3)),i, 3)
-		cv.Canny(img2_copy, img2_copy  ,cv.Round((i/3)),i, 3)
-		#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
-		#cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
-		#cv.Erode(img1_copy, img1_copy , element=None, iterations=1)
-		#cv.Erode(img2_copy, img2_copy , element=None, iterations=1)
+	#cv.Erode(img1_copy, img1_copy , element=None, iterations=1)
+	#cv.Erode(img2_copy, img2_copy , element=None, iterations=1)
+	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
+	cv.Canny(img1_copy ,img1_copy  ,cv.Round((i/2)),i, 3)
+	cv.Canny(img2_copy, img2_copy  ,cv.Round((i/2)),i, 3)
+	#cv.Laplace(img1_copy, img1_copy)
+	#cv.Laplace(img2_copy, img2_copy)
 
-		cv.ShowImage  ("Canny Coin 1", img1_copy )
-		cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
-		cv.ShowImage  ("Canny Coin 2", img2_copy )
-		cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (125 + (cv.GetSize(coin1_center_crop)[0])) )
-		print "Press any key to find correct orientation"  
-		#cv.WaitKey()
-		degrees = get_orientation(img1_copy, img2_copy)
-		print "Degrees Re-oriented: ", degrees
-		img3 = cv.CloneMat(coin2_center_crop)
-		img3 = rotate_image(coin2_center_crop, degrees)
-		cv.ShowImage("Orientation Corrected Image2", img3 )
-		cv.MoveWindow ("Orientation Corrected Image2", 100, 800)
-		print "i=", i
-		cv.WaitKey() 
-	"""
+	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+	#cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
+	#cv.Erode(img1_copy, img1_copy , element=None, iterations=1)
+	#cv.Erode(img2_copy, img2_copy , element=None, iterations=1)
+
+	cv.ShowImage  ("Canny Coin 1", img1_copy )
+	cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
+	cv.ShowImage  ("Canny Coin 2", img2_copy )
+	cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (125 + (cv.GetSize(coin1_center_crop)[0])) )
+	print "Press any key to find correct orientation"  
+	#cv.WaitKey()
+	degrees = get_orientation(img1_copy, img2_copy)
+	print "Degrees Re-oriented: ", degrees
+	img3 = cv.CloneMat(coin2_center_crop)
+	img3 = rotate_image(coin2_center_crop, degrees)
+	cv.ShowImage("Orientation Corrected Image2", img3 )
+	cv.MoveWindow ("Orientation Corrected Image2", 100, 800)
+	print "i=", i
+	cv.WaitKey() 
+
 
 	#pil orientation
 	img1_copy = cv.CloneMat(coin1_center_crop) 
@@ -354,17 +367,34 @@ if __name__=="__main__":
 	img2_pil = ImageOps.equalize(img2_pil)
 	#img1_copy = PILtoCV(img1_pil)
 	#img2_copy = PILtoCV(img2_pil)
-			
-	#img1_pil = img1_pil.filter(ImageFilter.FIND_EDGES)
-	#img2_pil = img2_pil.filter(ImageFilter.FIND_EDGES)
+
+	img1_pil = img1_pil.filter(ImageFilter.EDGE_ENHANCE)
+	img2_pil = img2_pil.filter(ImageFilter.EDGE_ENHANCE)
+	img1_pil = img1_pil.filter(ImageFilter.SMOOTH)
+	img2_pil = img2_pil.filter(ImageFilter.SMOOTH)	
+	#img1_pil = img1_pil.filter(ImageFilter.EMBOSS)
+	#img2_pil = img2_pil.filter(ImageFilter.EMBOSS)		
+	img1_pil = img1_pil.filter(ImageFilter.FIND_EDGES)
+	img2_pil = img2_pil.filter(ImageFilter.FIND_EDGES)
+	img1_pil = img1_pil.filter(ImageFilter.SMOOTH)
+	img2_pil = img2_pil.filter(ImageFilter.SMOOTH)
 	#img1_pil = img1_pil.filter(ImageFilter.CONTOUR)
 	#img2_pil = img2_pil.filter(ImageFilter.CONTOUR)
 	#img1_pil = img1_pil.filter(ImageFilter.DETAIL)
 	#img2_pil = img2_pil.filter(ImageFilter.DETAIL)
-	img1_pil = img1_pil.filter(ImageFilter.EDGE_ENHANCE)
-	img2_pil = img2_pil.filter(ImageFilter.EDGE_ENHANCE)
-	#img1_pil = img1_pil.filter(ImageFilter.EMBOSS)
-	#img2_pil = img2_pil.filter(ImageFilter.EMBOSS)
+
+	#filtHorizontal = [1, 0, -1, 2, 0, -2, 1, 0, -1]
+	#filtVertical   = [1, 2, 1, 0, 0, 0, -1, -2, -1]
+
+	#img1_pil = img1_pil.filter(ImageFilter.BLUR)
+	#img1_pil = img1_pil.filter(ImageFilter.BLUR)
+	#edgeHorizontal = im.filter((3,3), filtHorizontal)
+	#edgeVertical = im.filter((3,3), filtVertical)
+	#img1_pil = img1_pil.filter( (3,3) , filtHorizontal)
+
+	#img2_pil = img2_pil.filter( (3,3) , filtHorizontal)
+	#edgeVertical = im.filter((3,3), filtVertical)
+
 	#BLUR, CONTOUR, DETAIL, EDGE_ENHANCE, EDGE_ENHANCE_MORE, EMBOSS, FIND_EDGES, SMOOTH, SMOOTH_MORE, and SHARPEN. 
 
 
@@ -373,7 +403,7 @@ if __name__=="__main__":
 	print "Degrees Re-oriented: ", degrees
 	img3 = cv.CloneMat(coin2_center_crop)	
 	img3 = rotate_image(coin2_center_crop, degrees)
-	cv.ShowImage("Orientation Corrected Image2", img3 )
-	cv.MoveWindow ("Orientation Corrected Image2", 100, 800)
+	cv.ShowImage("PIL Orientation Corrected Image2", img3 )
+	cv.MoveWindow ("PIL Orientation Corrected Image2", 600, 800)
 	#print "i=", i
 	cv.WaitKey() 
