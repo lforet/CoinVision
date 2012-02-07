@@ -64,52 +64,45 @@ def center_crop(img, center, crop_size):
 def find_center_of_coin(img):
 	#create storage fo circle data
 	storage = cv.CreateMat(50, 1, cv.CV_32FC3)
- 	#storage = cv.CreateMemStorage(0)
-
+	#storage = cv.CreateMemStorage(0)
 	cv.SetZero(storage)
-
 	#img_copy = cv.CreateImage((img.width, img.height)), original_img.depth, img.nChannels)
 	img_copy = cv.CloneImage(img)
 	edges = cv.CreateImage(cv.GetSize(img), 8, 1)
 	#print edges, img
 	cv.Smooth(img , edges , cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(edges, edges, 50, 100, 3)
-    #cv.Smooth(edges, edges, cv.CV_GAUSSIAN, 3, 3)
+	#cv.Smooth(edges, edges, cv.CV_GAUSSIAN, 3, 3)
 	img_copy2 = cv.CloneImage(img_copy)
 	#cv.ShowImage("grayed center image", edges)
 	#cv.WaitKey()
-
 	best_circle = ((0,0),0)
-	for minRadius in range (150, 205, 5):
-		#img_copy = cv.CloneImage(img_copy2)
-		for maxRadius in range (210, 240, 5):
-			#print "minRadius: ", minRadius, "  maxRadius: ", maxRadius
-			circles = cv.HoughCircles(edges, storage, cv.CV_HOUGH_GRADIENT, 1, img.width, 100, 25, minRadius, maxRadius)
-
-			if len(np.asarray(storage)) > 0:
-				for i in range(0,len(np.asarray(storage))):
-					center = int(np.asarray(storage)[i][0][0]), int(np.asarray(storage)[i][0][1])
-					radius = int(np.asarray(storage)[i][0][2])
-					#print  center, radius	
-					cv.Circle(img_copy, center, radius, cv.CV_RGB(255, 0, 0), 1, cv.CV_AA, 0 ) 
-					cv.Circle(img_copy, center, 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
-					cv.ShowImage("Center of Coin", img_copy)
-					cv.MoveWindow ('Center of Coin', 50 , (50 + (1 * (cv.GetSize(img_copy)[0])))) 
+	#minRadius = 10; maxRadius = img.height
+	canny = 100; param2 = 1;
+	#for minRadius in range ((img.height/4), (img.height/2), 10):
+	for minRadius in range (100, 190, 10):
+		img_copy = cv.CloneImage(img_copy2)
+		#for maxRadius in range ((img.height/2)+50, img.height, 10):
+		for maxRadius in range (190, 260, 10):
+			#print "minRadius: ", minRadius, " maxRadius: ", maxRadius
+			circles = cv.HoughCircles(edges, storage, cv.CV_HOUGH_GRADIENT, 1, img.height, canny, param2, minRadius, maxRadius)
+			
+			if storage.rows > 0:
+				for i in range(0, storage.rows):
+					#print "Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], " minRadius: ", minRadius, " maxRadius: ", maxRadius
 					cv.WaitKey(5)
 					time.sleep(.01)
-					if (radius > best_circle[1]) & (radius < 226) :
+					center = int(np.asarray(storage)[i][0][0]), int(np.asarray(storage)[i][0][1])
+					radius = int(np.asarray(storage)[i][0][2])
+					#print center, radius
+					cv.Circle(img_copy, center, radius, cv.CV_RGB(255, 0, 0), 1, cv.CV_AA, 0 )
+					cv.Circle(img_copy, center, 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
+					cv.ShowImage("Center of Coin", img_copy)
+					cv.MoveWindow ('Center of Coin', 50 , (50 + (1 * (cv.GetSize(img_copy)[0]))))
+					if (radius > best_circle[1]) & (radius > 150) & (radius < img.height/1.5):
 						best_circle = (center, radius)
-						print "Found Best Circle---Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], "   minRadius: ", minRadius, "  maxRadius: ", maxRadius
-						cv.Circle(img_copy, (best_circle[0]), best_circle[1], cv.CV_RGB(255, 0, 0), 1, cv.CV_AA, 0 ) 
-						cv.Circle(img_copy, (best_circle[0]), 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 ) 
-					   #cv.Circle(cannyedges, (center), radius, cv.CV_RGB(255, 255, 255), 1, cv.CV_AA, 0 )
-						cv.ShowImage("Center of Coin", img_copy)
-						cv.MoveWindow ('Center of Coin', 50 , (50 + (1 * (cv.GetSize(img_copy)[0]))))
-						#need code here to validate center found: like has to be within x,y of center of image
-						cv.WaitKey(10)
-						time.sleep(.01)
-						#cv.WaitKey()
-	print "done cirlces"
+						print "Found Best Circle---Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], " minRadius: ", minRadius, " maxRadius: ", maxRadius
+
 	return best_circle
 
 def rmsdiff(img1, img2):
@@ -166,7 +159,7 @@ def get_orientation(img1, img2):
 		cv.ShowImage("Image of Interest", temp_img )
 		cv.MoveWindow ("Image of Interest", (100 + 2*cv.GetSize(img1)[0]), 100)
 		cv.ShowImage("Subtracted_Image", subtracted_image)
-		cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1)[0]), (160 + cv.GetSize(img1)[1]) )
+		cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1)[0]), (150 + cv.GetSize(img1)[1]) )
 		sum_of_and = cv.Sum(subtracted_image)
 		if best_sum == 0: best_sum = sum_of_and[0]
 		if sum_of_and[0] > best_sum: 
@@ -233,8 +226,9 @@ if __name__=="__main__":
 	img2_copy = cv.CloneImage(img2)
 
 	#find center of coins
-	print "Finding center of both coins....."
+	print "Finding center of coins image1....."
 	coin1_center = find_center_of_coin(img1_copy)
+	print "Finding center of coins image2....."
 	coin2_center = find_center_of_coin(img2_copy)
 	#cv.WaitKey()
 
@@ -321,10 +315,10 @@ if __name__=="__main__":
 	img1_copy = PILtoCV(img1_pil)
 	img2_copy = PILtoCV(img2_pil)
 	print "Equalizing the histograms..."
-	cv.ShowImage("Image 1_copy", img1_copy)
-	cv.MoveWindow ('Image 1_copy', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
-	cv.ShowImage("Image 2_copy", img2_copy)
-	cv.MoveWindow ("Image 2_copy", (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (155 + (cv.GetSize(coin1_center_crop)[0])) )
+	cv.ShowImage("Equalized Image 1_copy", img1_copy)
+	cv.MoveWindow ('Equalized Image 1_copy', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
+	cv.ShowImage("Equalized Image 2_copy", img2_copy)
+	cv.MoveWindow ("Equalized Image 2_copy", (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (155 + (cv.GetSize(coin1_center_crop)[0])) )
 	cv.WaitKey()
 	#time.sleep(2)
 
@@ -357,7 +351,7 @@ if __name__=="__main__":
 	print "i=", i
 	cv.WaitKey() 
 
-
+"""
 	#pil orientation
 	img1_copy = cv.CloneMat(coin1_center_crop) 
 	img2_copy = cv.CloneMat(coin2_center_crop)
@@ -407,3 +401,4 @@ if __name__=="__main__":
 	cv.MoveWindow ("PIL Orientation Corrected Image2", 600, 800)
 	#print "i=", i
 	cv.WaitKey() 
+"""
