@@ -21,6 +21,120 @@ import ImageFilter
 
 
 
+def surf_dif(img1, img2):
+	#only features with a keypoint.hessian > 600 will be extracted
+	#using extended descriptors (1) -> 128 elements each
+	#surfParams = cvSURFParams(600, 1)
+	#gray images for detecting
+	object1 = cv.CreateImage((img1.width,img1.height), 8, 1)
+	cv.CvtColor(img1, object1, cv.CV_BGR2GRAY)
+	object2 = cv.CreateImage((img2.width,img2.height), 8, 1)
+	cv.CvtColor(img2, object2, cv.CV_BGR2GRAY)
+
+	keypoints1, descriptors1 = cv.ExtractSURF(object1, None, (0, 400, 3, 4))
+	keypoints2, descriptors2 = cv.ExtractSURF(object2, None, (0, 400, 3, 4))
+
+	print "found %d keypoints for img1"%keypoints1.rows
+	print "found %d keypoints for img2"%keypoints2.rows
+
+	#feature matching
+	ft = cv.CreateKDTree(descriptors1)
+	indices, distances = cv.FindFeatures(ft, descriptors2, 1, 250)
+	cv.cvReleaseFeatureTree(ft)
+
+	#the C max value for a long (no limit in python)
+	DBL_MAX = 1.7976931348623158e+308
+	reverseLookup = [-1]*keypoints1.rows
+	reverseLookupDist = [DBL_MAX]*keypoints1.rows
+
+	matchCount = 0
+	for j in xrange(keypoints2.rows):
+	  i = indices[j]
+	  d = distances[j]
+	  if d < reverseLookupDist[i]:
+		   if reverseLookupDist[i] == DBL_MAX:
+		       matchCount+=1
+		   reverseLookup[i] = j
+		   reverseLookupDist[i] = d
+		  
+	print "found %d putative correspondences"%matchCount
+
+	points1 = cv.CreateMat(1,matchCount,cv.CV_32FC2)
+	points2 = cv.CreateMat(1,matchCount,cv.CV_32FC2)
+	m=0
+	for j in xrange(keypoints2.rows):
+	  i = indices[j]
+	  if j == reverseLookup[i]:
+		   pt1 = keypoints1[i][0], keypoints1[i][1]
+		   pt2 = keypoints2[j][0], keypoints2[j][1]
+		   points1[m]=cv.cvScalar(pt1[0], pt1[1])
+		   points2[m]=cv.cvScalar(pt2[0], pt2[1])
+		   m+=1
+
+	#remove outliers with fundamental matrix:
+	status = cv.CreateMat(points1.rows, points1.cols, cv.CV_8UC1)
+	fund = cv.CreateMat(3, 3, CV_32FC1)
+	cv.FindFundamentalMat(points1, points2, fund, cv.CV_FM_LMEDS, 1.0, 0.99, status)
+	print "fundamental matrix:"
+	print fund
+
+	print "number of outliers detected using the fundamental matrix: ", len([stat for stat in status if not stat])
+
+	#updating the points without the outliers
+	points1 = [pt for i, pt in enumerate(points1) if status[i]]
+	points2 = [pt for i, pt in enumerate(points2) if status[i]]
+
+	print "final number of correspondences:",len(points1) 
+
+
+
+
+
+def flatten(x):
+    """flatten(sequence) -> list
+
+    Returns a single, flat list which contains all elements retrieved
+    from the sequence and all recursively contained sub-sequences
+    (iterables).
+
+    Examples:
+    >>> [1, 2, [3,4], (5,6)]
+    [1, 2, [3, 4], (5, 6)]
+    >>> flatten([[[1,2,3], (42,None)], [4,5], [6], 7, MyVector(8,9,10)])
+    [1, 2, 3, 42, None, 4, 5, 6, 7, 8, 9, 10]"""
+
+    result = []
+    for el in x:
+        #if isinstance(el, (list, tuple)):
+        if hasattr(el, "__iter__") and not isinstance(el, basestring):
+            result.extend(flatten(el))
+        else:
+            result.append(el)
+    return result
+
+
+def dist(x,y):   
+    return np.sqrt(np.sum((x-y)**2))
+
+def get_SURF_points(img):
+	temp_img = cv.CloneMat(img)
+	keypoints = []
+	try:
+		storage = cv.CreateMemStorage() 
+		(keypoints, descriptors) = cv.ExtractSURF(temp_img , None, storage , (0, 400, 3, 4))
+		for ((xx, yy), laplacian, size, dir, hessian) in keypoints:
+			print "count= %d x=%d y=%d laplacian=%d size=%d dir=%f hessian=%f" % (len(keypoints), xx, yy, laplacian, size, dir, hessian)
+			cv.Circle(temp_img, (xx,yy), size, (255,0,0),1, cv.CV_AA , 0)
+	except Exception, e:
+    		print e
+
+	cv.ShowImage('SURF', temp_img )
+	cv.WaitKey()
+	cv.DestroyWindow('SURF')
+	if len(keypoints) > 0: 
+		return keypoints
+	else:
+		return -1
 
 
 
@@ -78,7 +192,7 @@ def find_center_of_coin(img):
 	#cv.WaitKey()
 	best_circle = ((0,0),0)
 	#minRadius = 10; maxRadius = img.height
-	canny = 100; param2 = 1;
+	canny = 175; param2 = 1;
 	#for minRadius in range ((img.height/4), (img.height/2), 10):
 	for minRadius in range (100, 190, 10):
 		img_copy = cv.CloneImage(img_copy2)
@@ -144,6 +258,44 @@ def get_orientation_PIL1(img1, img2):
 	print 'Finished finding best orientation'
 	return (best_orientation)
 
+
+def get_orientation_SURF(img1, img2): 
+
+	subtracted_image = cv.CreateImage(cv.GetSize(img1), 8, 1)
+	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)
+
+	best_sum = 0
+	best_orientation = 0
+	print 'Starting to find best orientation using SURF'
+	img1_SURFpoints = np.array(flatten(get_SURF_points(cv.GetMat(img1))))
+
+	for i in range(1, 360):
+		temp_img = rotate_image(img2, i)
+		#cv.And(img1, temp_img , subtracted_image)
+		img2_SURFpoints = np.array(flatten(get_SURF_points(cv.GetMat(temp_img))))
+		cv.ShowImage("Image of Interest", temp_img )
+		cv.MoveWindow ("Image of Interest", (100 + 2*cv.GetSize(img1)[0]), 100)
+
+		print "img1_SURFpoints.size, img2_SURFpoints.size: ", img1_SURFpoints.size, img2_SURFpoints.size
+		cv.WaitKey()
+		print  img1_SURFpoints
+		#surf_dist = dist(img1_SURFpoints,img2_SURFpoints)
+		#print 'surf_dist =', surf_dist
+		print "print scipy.spatial.distance.euclidean = ", scipy.spatial.distance.euclidean(img1_SURFpoints, img2_SURFpoints)
+		#cv.ShowImage("Subtracted_Image", subtracted_image)
+		#cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1)[0]), (150 + cv.GetSize(img1)[1]) )
+		#sum_of_SURF = cv.Sum(subtracted_image)
+		#if best_sum == 0: best_sum = sum_of_and[0]
+		#if sum_of_and[0] > best_sum: 
+		#	best_sum = sum_of_and[0]
+		#	best_orientation = i
+		#	print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "best_orientation =", best_orientation
+		key = cv.WaitKey(5)
+		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
+			break
+		time.sleep(.1)
+	print 'Finished finding best orientation'
+	return (best_orientation)
 
 def get_orientation(img1, img2): 
 
@@ -351,7 +503,7 @@ if __name__=="__main__":
 	print "i=", i
 	cv.WaitKey() 
 
-"""
+	"""
 	#pil orientation
 	img1_copy = cv.CloneMat(coin1_center_crop) 
 	img2_copy = cv.CloneMat(coin2_center_crop)
@@ -401,4 +553,15 @@ if __name__=="__main__":
 	cv.MoveWindow ("PIL Orientation Corrected Image2", 600, 800)
 	#print "i=", i
 	cv.WaitKey() 
-"""
+	"""
+
+	### compare using surf
+	img1_copy = cv.CloneMat(coin1_center_crop) 
+	img2_copy = cv.CloneMat(coin2_center_crop)
+	print "Using SURF"
+	cv.WaitKey() 
+	degrees = get_orientation_SURF(img1_copy, img2_copy)
+	print "Degrees Re-oriented: ", degrees
+	cv.WaitKey() 	
+
+
