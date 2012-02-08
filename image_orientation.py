@@ -18,7 +18,9 @@ import ImageOps
 from math import pi
 from opencv import adaptors
 import ImageFilter
-
+from coin_tools import *
+#from common import anorm
+#from functools import partial
 
 
 def surf_dif(img1, img2):
@@ -231,10 +233,6 @@ def rmsdiff(img1, img2):
 def get_orientation_PIL1(img1, img2): 
 	best_rmsdiff = 99999999
 	best_orientation = 0
-	#diplay images
-	img1_cv = PILtoCV(img1_pil)
-	cv.ShowImage("PIL 1", img1_cv)
-	cv.MoveWindow ("PIL 1",500,100)
 	print 'Starting to find best orientation'
 	for i in range(1, 360):
 		#temp_img = rotate_image(img2, i)
@@ -242,19 +240,19 @@ def get_orientation_PIL1(img1, img2):
 		#result_img = ImageChops.difference(img1, img2)	
 		#ImageChops.subtract(image1, image2, scale, offset) => image
 		result = rmsdiff(img1, temp_img)
-
 		#diplay images
 		img2_cv = PILtoCV(temp_img)
-		cv.ShowImage("PIL 2", img2_cv)
+		cv.ShowImage("Sobel Rotation", img2_cv)
+		cv.MoveWindow ("Sobel Rotation", (101 + (2 * (cv.GetSize(img2_cv)[0]))) , (125 + (cv.GetSize(img2_cv)[0])) )
 		cv.MoveWindow ("PIL 2", 500, 600)
 		if result < best_rmsdiff: 
 			best_rmsdiff = result
 			best_orientation = i
 			print i, "result = ", result, "  best_orientation =", best_orientation
 		key = cv.WaitKey(5)
-		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
-			break
-		time.sleep(.05)
+		#if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
+		#	break
+		time.sleep(.01)
 	print 'Finished finding best orientation'
 	return (best_orientation)
 
@@ -298,9 +296,9 @@ def get_orientation_SURF(img1, img2):
 	return (best_orientation)
 
 def get_orientation(img1, img2): 
-
 	subtracted_image = cv.CreateImage(cv.GetSize(img1), 8, 1)
-	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)
+	#img2_copy = cv.CreateImage(cv.GetSize(img2), 8, 1)
+	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)	
 
 	best_sum = 0
 	best_orientation = 0
@@ -308,8 +306,8 @@ def get_orientation(img1, img2):
 	for i in range(1, 360):
 		temp_img = rotate_image(img2, i)
 		cv.And(img1, temp_img , subtracted_image)
-		cv.ShowImage("Image of Interest", temp_img )
-		cv.MoveWindow ("Image of Interest", (100 + 2*cv.GetSize(img1)[0]), 100)
+		cv.ShowImage("Image 2 being processed", temp_img )
+		cv.MoveWindow ("Image 2 being processed", (100 + 2*cv.GetSize(img1)[0]), 100)
 		cv.ShowImage("Subtracted_Image", subtracted_image)
 		cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1)[0]), (150 + cv.GetSize(img1)[1]) )
 		sum_of_and = cv.Sum(subtracted_image)
@@ -428,11 +426,11 @@ if __name__=="__main__":
 
 	#crop out center of coin based on found center
 	print "Cropping center of original and scaled corrected images..."
-	coin1_center_crop = center_crop(img1_copy, coin1_center, 70)
+	coin1_center_crop = center_crop(img1_copy, coin1_center, 40)
 	cv.ShowImage("Crop Center of Coin1", coin1_center_crop)
 	cv.MoveWindow ('Crop Center of Coin1', 100, 100)
 	#cv.WaitKey()
-	coin2_center_crop = center_crop(img2_copy, coin2_center, 70)
+	coin2_center_crop = center_crop(img2_copy, coin2_center, 40)
 	cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
 	cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin1_center_crop)[0])) )
 	#cv.WaitKey()
@@ -456,38 +454,35 @@ if __name__=="__main__":
 	cv.WaitKey()
 
 
-	#for i in range(50, 300, 50):
-	i=190
+	"""
+	#Canny orientation
+	i=150
 	img1_copy = cv.CloneMat(coin1_center_crop) 
 	img2_copy = cv.CloneMat(coin2_center_crop)
-	img1_pil = CVtoPIL(img1_copy)
-	img2_pil = CVtoPIL(img2_copy)
-	img1_pil = ImageOps.equalize(img1_pil) 
-	img2_pil = ImageOps.equalize(img2_pil)
-	img1_copy = PILtoCV(img1_pil)
-	img2_copy = PILtoCV(img2_pil)
-	print "Equalizing the histograms..."
-	cv.ShowImage("Equalized Image 1_copy", img1_copy)
-	cv.MoveWindow ('Equalized Image 1_copy', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
-	cv.ShowImage("Equalized Image 2_copy", img2_copy)
-	cv.MoveWindow ("Equalized Image 2_copy", (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (155 + (cv.GetSize(coin1_center_crop)[0])) )
-	cv.WaitKey()
+	#img1_pil = CVtoPIL(img1_copy)
+	#img2_pil = CVtoPIL(img2_copy)
+	#img1_pil = ImageOps.equalize(img1_pil) 
+	#img2_pil = ImageOps.equalize(img2_pil)
+	#img1_copy = PILtoCV(img1_pil)
+	#img2_copy = PILtoCV(img2_pil)
+	#print "Equalizing the histograms..."
+	#cv.ShowImage("Equalized Image 1_copy", img1_copy)
+	#cv.MoveWindow ('Equalized Image 1_copy', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
+	#cv.ShowImage("Equalized Image 2_copy", img2_copy)
+	#cv.MoveWindow ("Equalized Image 2_copy", (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (155 + (cv.GetSize(coin1_center_crop)[0])) )
+	#cv.WaitKey()
 	#time.sleep(2)
 
 	#cv.Erode(img1_copy, img1_copy , element=None, iterations=1)
 	#cv.Erode(img2_copy, img2_copy , element=None, iterations=1)
-	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
-	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
-	cv.Canny(img1_copy ,img1_copy  ,cv.Round((i/2)),i, 3)
-	cv.Canny(img2_copy, img2_copy  ,cv.Round((i/2)),i, 3)
-	#cv.Laplace(img1_copy, img1_copy)
-	#cv.Laplace(img2_copy, img2_copy)
-
 	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
-	#cv.Erode(img1_copy, img1_copy , element=None, iterations=1)
-	#cv.Erode(img2_copy, img2_copy , element=None, iterations=1)
 
+	cv.Smooth(img1_copy , img1_copy, cv.CV_MEDIAN,3, 3)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN, 3, 3)
+	cv.Canny(img1_copy , img1_copy  ,cv.Round((i/2)),i, 3)
+	cv.Canny(img2_copy , img2_copy  ,cv.Round((i/2)),i, 3)
+	#maybe canny until pixel count is close???????????????
 	cv.ShowImage  ("Canny Coin 1", img1_copy )
 	cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
 	cv.ShowImage  ("Canny Coin 2", img2_copy )
@@ -502,7 +497,7 @@ if __name__=="__main__":
 	cv.MoveWindow ("Orientation Corrected Image2", 100, 800)
 	print "i=", i
 	cv.WaitKey() 
-
+	""" 
 	"""
 	#pil orientation
 	img1_copy = cv.CloneMat(coin1_center_crop) 
@@ -554,14 +549,158 @@ if __name__=="__main__":
 	#print "i=", i
 	cv.WaitKey() 
 	"""
-
+	"""
 	### compare using surf
 	img1_copy = cv.CloneMat(coin1_center_crop) 
 	img2_copy = cv.CloneMat(coin2_center_crop)
 	print "Using SURF"
+	#cv.WaitKey() 
+	#degrees = get_orientation_SURF(img1_copy, img2_copy)
+	#print "Degrees Re-oriented: ", degrees
+	#cv.WaitKey() 	
+    #import sys
+    #try: fn1, fn2 = sys.argv[1:3]
+    #except:
+    #    fn1 = '../c/box.png'
+    #    fn2 = '../c/box_in_scene.png'
+    #print help_message
+
+    #img1 = cv2.imread(fn1, 0)
+    #img2 = cv2.imread(fn2, 0)
+
+
+	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+	#cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
+	#cv.Canny(img1_copy ,img1_copy  ,cv.Round((i/2)),i, 3)
+	#cv.Canny(img2_copy, img2_copy  ,cv.Round((i/2)),i, 3)
+	img1_copy = image2array(img1_copy)
+	img2_copy = image2array(img2_copy)
+
+	surf = cv2.SURF(1000)
+	kp1, desc1 = surf.detect(img1_copy, None, False)
+	kp2, desc2 = surf.detect(img2_copy, None, False)
+	desc1.shape = (-1, surf.descriptorSize())
+	desc2.shape = (-1, surf.descriptorSize())
+	print 'img1 - %d features, img2 - %d features' % (len(kp1), len(kp2))
+	print 'bruteforce match:',
+	#cv.WaitKey() 
+	vis_brute = match_and_draw(img1_copy, img2_copy, kp1, kp2, desc1, desc2, match_bruteforce, 0.75 )
+	print 'flann match:',
+	vis_flann = match_and_draw(img1_copy, img2_copy, kp1, kp2, desc1, desc2, match_flann, 0.6 )
+	#cv.ShowImage('find_obj SURF', vis_brute)
+	#cv.ShowImage('find_obj SURF flann', vis_flann)
+	cv2.imshow('find_obj SURF', vis_brute)
+	cv2.imshow('find_obj SURF flann', vis_flann)
 	cv.WaitKey() 
-	degrees = get_orientation_SURF(img1_copy, img2_copy)
+	"""
+
+	print "Using Sobel"
+	img1_copy = cv.CloneMat(coin1_center_crop) 
+	img2_copy = cv.CloneMat(coin2_center_crop)
+	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
+	#cv.Canny(img1_copy ,img1_copy  ,cv.Round((i/2)),i, 3)
+	#cv.Canny(img2_copy, img2_copy  ,cv.Round((i/2)),i, 3)
+	sobel_img1_copy = cv.CreateImage(cv.GetSize(img1_copy), cv.IPL_DEPTH_16S,1)
+	sobel_img2_copy = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S,1)
+	cv.Sobel(img1_copy, sobel_img1_copy, 1 , 0 )
+	cv.Sobel(img2_copy, sobel_img2_copy, 1 , 0 )
+	cv.ConvertScaleAbs(sobel_img1_copy, img1_copy, 1, 0)
+	cv.ConvertScaleAbs(sobel_img2_copy, img2_copy, 1, 0)
+	cv.ShowImage("SOBEL Image1", img1_copy )
+	cv.ShowImage("SOBEL Image2", img2_copy )
+	cv.MoveWindow ('SOBEL Image1', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
+	cv.MoveWindow ("SOBEL Image2", (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (125 + (cv.GetSize(coin1_center_crop)[0])) )
+	cv.WaitKey()
+
+	img1_pil = CVtoPIL(img1_copy)
+	img2_pil = CVtoPIL(img2_copy)
+	#img1_pil = ImageOps.equalize(img1_pil) 
+	#img2_pil = ImageOps.equalize(img2_pil)
+	#img1_copy = PILtoCV(img1_pil)
+	#img2_copy = PILtoCV(img2_pil)
+	#img1_pil = img1_pil.filter(ImageFilter.FIND_EDGES)
+	#img2_pil = img2_pil.filter(ImageFilter.FIND_EDGES)
+	degrees = get_orientation_PIL1(img1_pil, img2_pil)
 	print "Degrees Re-oriented: ", degrees
-	cv.WaitKey() 	
+	img3 = cv.CloneImage (img2)	
+	img3 = rotate_image(img2, degrees)
+	cv.DestroyWindow("Image 1")
+	cv.ShowImage("Image 1", img1)
+	cv.MoveWindow ('Image 1',50 ,50 )
+	cv.ShowImage("SOBEL Orientation Corrected Image2", img3 )
+	cv.MoveWindow ("SOBEL Orientation Corrected Image2", 50 , (50 + (1 * (cv.GetSize(img1)[0]))) )
+	cv.WaitKey() 
+	"""
+	print "Using Laplace"
+	img1_copy = cv.CloneMat(coin1_center_crop) 
+	img2_copy = cv.CloneMat(coin2_center_crop)
+	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
+	Laplace_img1_copy = cv.CreateImage(cv.GetSize(img1_copy), cv.IPL_DEPTH_16S,1)
+	Laplace_img2_copy = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S,1)
+	cv.Laplace(img1_copy, Laplace_img1_copy)
+	cv.Laplace(img2_copy, Laplace_img2_copy)
+	cv.ConvertScaleAbs(Laplace_img1_copy, img1_copy, 1, 0)
+	cv.ConvertScaleAbs(Laplace_img2_copy, img2_copy, 1, 0)
+	cv.ShowImage("Laplace Image1", img1_copy )
+	cv.ShowImage("Laplace Image2", img2_copy )
+	cv.WaitKey()
+	img1_pil = CVtoPIL(img1_copy)
+	img2_pil = CVtoPIL(img2_copy)
+	degrees = get_orientation_PIL1(img1_pil, img2_pil)
+	print "Degrees Re-oriented: ", degrees
+	img3 = cv.CloneMat(coin2_center_crop)	
+	img3 = rotate_image(coin2_center_crop, degrees)
+	cv.ShowImage("Laplace Orientation Corrected Image2", img3 )
+	cv.MoveWindow ("Laplace Orientation Corrected Image2", 600, 800)
+	#print "i=", i
+	#cv.WaitKey() 
+	#print " RMS: ", rmsdiff(img1_pil, img2_pil)
+	cv.WaitKey() 
+	"""
+	"""
+	print "Using Sobel / Binary"
+	img1_copy = cv.CloneMat(coin1_center_crop) 
+	img2_copy = cv.CloneMat(coin2_center_crop)
+	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
+	#sobel_img1_copy = cv.CreateImage(cv.GetSize(img1_copy), cv.IPL_DEPTH_16S,1)
+	#sobel_img2_copy = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S,1)
+	#cv.Sobel(img1_copy, sobel_img1_copy, 1 , 0 )
+	#cv.Sobel(img2_copy, sobel_img2_copy, 1 , 0 )
+	#cv.ConvertScaleAbs(sobel_img1_copy, img1_copy, 1, 0)
+	#cv.ConvertScaleAbs(sobel_img2_copy, img2_copy, 1, 0)
+	img1_copy = image2array(img1_copy)
+	img2_copy = image2array(img2_copy)
+	(thresh, bw_img1_copy) = cv2.threshold(img1_copy, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+	(thresh, bw_img2_copy) = cv2.threshold(img2_copy, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+	#thresh = 75
+	#bw_img1_copy = cv2.threshold(img1_copy, thresh, 255, cv2.THRESH_BINARY)[1]
+	#bw_img2_copy = cv2.threshold(img2_copy, thresh, 255, cv2.THRESH_BINARY)[1]
+	img1_pil = array2image(bw_img1_copy)
+	img2_pil = array2image(bw_img2_copy)
+	img1_CV = PILtoCV(img1_pil)
+	img2_CV = PILtoCV(img2_pil)
+
+	cv.ShowImage("bw_img1_copy Image1", img1_CV )
+	cv.ShowImage("bw_img2_copy Image2", img2_CV )
+
+	cv.WaitKey()
+	img1_pil = CVtoPIL(img1_CV )
+	img2_pil = CVtoPIL(img2_CV )
+	degrees = get_orientation_PIL1(img1_pil, img2_pil)
+	print "Degrees Re-oriented: ", degrees
+	img3 = cv.CloneMat(coin2_center_crop)	
+	img3 = rotate_image(coin2_center_crop, degrees)
+	cv.ShowImage("CornerHarris Orientation Corrected Image2", img3 )
+	cv.MoveWindow ("CornerHarris Orientation Corrected Image2", 600, 800)
+	#print "i=", i
+	#cv.WaitKey() 
+	#print " RMS: ", rmsdiff(img1_pil, img2_pil)
+	cv.WaitKey() 
+	"""
+
+
 
 

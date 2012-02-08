@@ -1,0 +1,7 @@
+sudo apt-get install python-dev python-libxml2  python-matplotlib python-numpy ipython python-scipy python-tk python-opencv
+
+sudo apt-get install python-setuptools
+
+sudo easy_install mahotas
+
+
