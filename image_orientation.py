@@ -426,11 +426,11 @@ if __name__=="__main__":
 
 	#crop out center of coin based on found center
 	print "Cropping center of original and scaled corrected images..."
-	coin1_center_crop = center_crop(img1_copy, coin1_center, 40)
+	coin1_center_crop = center_crop(img1_copy, coin1_center, 50)
 	cv.ShowImage("Crop Center of Coin1", coin1_center_crop)
 	cv.MoveWindow ('Crop Center of Coin1', 100, 100)
 	#cv.WaitKey()
-	coin2_center_crop = center_crop(img2_copy, coin2_center, 40)
+	coin2_center_crop = center_crop(img2_copy, coin2_center, 50)
 	cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
 	cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin1_center_crop)[0])) )
 	#cv.WaitKey()
@@ -597,6 +597,12 @@ if __name__=="__main__":
 	print "Using Sobel"
 	img1_copy = cv.CloneMat(coin1_center_crop) 
 	img2_copy = cv.CloneMat(coin2_center_crop)
+	#img1_pil = CVtoPIL(img1_copy)
+	#img2_pil = CVtoPIL(img2_copy)
+	#img1_pil = ImageOps.equalize(img1_pil) 
+	#img2_pil = ImageOps.equalize(img2_pil)
+	#img1_copy = PILtoCV(img1_pil)
+	#img2_copy = PILtoCV(img2_pil)
 	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
 	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
 	#cv.Canny(img1_copy ,img1_copy  ,cv.Round((i/2)),i, 3)
@@ -625,6 +631,7 @@ if __name__=="__main__":
 	print "Degrees Re-oriented: ", degrees
 	img3 = cv.CloneImage (img2)	
 	img3 = rotate_image(img2, degrees)
+	#actually need to show scaled image not just image1
 	cv.DestroyWindow("Image 1")
 	cv.ShowImage("Image 1", img1)
 	cv.MoveWindow ('Image 1',50 ,50 )
