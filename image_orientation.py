@@ -230,95 +230,83 @@ def rmsdiff(img1, img2):
     rms = math.sqrt(sum_of_squares/float(img1.size[0] * img1.size[1]))
     return rms
 
-def get_orientation_PIL1(img1, img2): 
-	best_rmsdiff = 99999999
-	best_orientation = 0
-	print 'Starting to find best orientation'
-	for i in range(1, 360):
-		#temp_img = rotate_image(img2, i)
-		temp_img = img2.rotate(i)
-		#result_img = ImageChops.difference(img1, img2)	
-		#ImageChops.subtract(image1, image2, scale, offset) => image
-		result = rmsdiff(img1, temp_img)
-		#diplay images
-		img2_cv = PILtoCV(temp_img)
-		cv.ShowImage("Sobel Rotation", img2_cv)
-		cv.MoveWindow ("Sobel Rotation", (101 + (2 * (cv.GetSize(img2_cv)[0]))) , (125 + (cv.GetSize(img2_cv)[0])) )
-		cv.MoveWindow ("PIL 2", 500, 600)
-		if result < best_rmsdiff: 
-			best_rmsdiff = result
-			best_orientation = i
-			print i, "result = ", result, "  best_orientation =", best_orientation
-		key = cv.WaitKey(5)
-		#if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
-		#	break
-		time.sleep(.01)
-	print 'Finished finding best orientation'
-	return (best_orientation)
-
-
-def get_orientation_SURF(img1, img2): 
-
+def get_orientation_canny(img1, img2):
+	#x=190 
 	subtracted_image = cv.CreateImage(cv.GetSize(img1), 8, 1)
-	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)
-
-	best_sum = 0
-	best_orientation = 0
-	print 'Starting to find best orientation using SURF'
-	img1_SURFpoints = np.array(flatten(get_SURF_points(cv.GetMat(img1))))
-
-	for i in range(1, 360):
-		temp_img = rotate_image(img2, i)
-		#cv.And(img1, temp_img , subtracted_image)
-		img2_SURFpoints = np.array(flatten(get_SURF_points(cv.GetMat(temp_img))))
-		cv.ShowImage("Image of Interest", temp_img )
-		cv.MoveWindow ("Image of Interest", (100 + 2*cv.GetSize(img1)[0]), 100)
-
-		print "img1_SURFpoints.size, img2_SURFpoints.size: ", img1_SURFpoints.size, img2_SURFpoints.size
-		cv.WaitKey()
-		print  img1_SURFpoints
-		#surf_dist = dist(img1_SURFpoints,img2_SURFpoints)
-		#print 'surf_dist =', surf_dist
-		print "print scipy.spatial.distance.euclidean = ", scipy.spatial.distance.euclidean(img1_SURFpoints, img2_SURFpoints)
-		#cv.ShowImage("Subtracted_Image", subtracted_image)
-		#cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1)[0]), (150 + cv.GetSize(img1)[1]) )
-		#sum_of_SURF = cv.Sum(subtracted_image)
-		#if best_sum == 0: best_sum = sum_of_and[0]
-		#if sum_of_and[0] > best_sum: 
-		#	best_sum = sum_of_and[0]
-		#	best_orientation = i
-		#	print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "best_orientation =", best_orientation
-		key = cv.WaitKey(5)
-		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
-			break
-		time.sleep(.1)
-	print 'Finished finding best orientation'
-	return (best_orientation)
-
-def get_orientation(img1, img2): 
-	subtracted_image = cv.CreateImage(cv.GetSize(img1), 8, 1)
-	#img2_copy = cv.CreateImage(cv.GetSize(img2), 8, 1)
 	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)	
 
-	best_sum = 0
+	best_sub = 999999999
 	best_orientation = 0
 	print 'Starting to find best orientation'
-	for i in range(1, 360):
-		temp_img = rotate_image(img2, i)
-		cv.And(img1, temp_img , subtracted_image)
-		cv.ShowImage("Image 2 being processed", temp_img )
-		cv.MoveWindow ("Image 2 being processed", (100 + 2*cv.GetSize(img1)[0]), 100)
+	best_canny  = 0
+	best_dif = 9999999
+	for x in range(20, 200, 10):
+		img1_copy = cv.CloneMat(img1)
+		cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+		cv.Canny(img1_copy , img1_copy  ,x/2,x, 3)
+		cv.ShowImage  ("Canny Coin 1", img1_copy )
+		cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
+		for i in range(1, 360):
+			img2_copy = cv.CloneMat(img2)
+			img2_copy = rotate_image(img2_copy, i)
+			cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
+			cv.Canny(img2_copy , img2_copy  ,x/2,x, 3)
+			cv.AbsDiff(img1_copy, img2_copy , subtracted_image)
+			cv.ShowImage  ("Canny Coin 2", img2_copy )
+			cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(img1)[0]))) , (125 + (cv.GetSize(img1)[0])) )
+			cv.ShowImage("Subtracted_Image", subtracted_image)
+			cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1)[0]), (125 + cv.GetSize(img1)[1]) )
+			result = cv.Sum(subtracted_image)	
+			#print i, "result = ", result
+			if result[0] < best_sub: 
+				best_sub = result[0]
+				best_orientation = i
+				print i, "result = ", result[0], "  best_orientation =", best_orientation
+				dif = math.fabs(265-best_orientation)
+				if dif < best_dif: 
+					best_dif = dif
+					best_canny = x
+			key = cv.WaitKey(5)
+			if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
+				break 
+			time.sleep(.01)
+		print x, "   best canny: ", best_canny, "  best dif= ", best_dif
+	print 'Finished finding best orientation'
+	return (best_orientation)
+
+
+def get_orientation_sobel(img1, img2): 
+	subtracted_image = cv.CreateImage(cv.GetSize(img1), 8, 1)
+	img1_copy = cv.CloneMat(img1)
+	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)	
+	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+	sobel_img1_copy = cv.CreateImage(cv.GetSize(img1_copy), cv.IPL_DEPTH_16S,1)
+	cv.Sobel(img1_copy, sobel_img1_copy, 1 , 1 )
+	cv.ConvertScaleAbs(sobel_img1_copy, img1_copy, 1, 1)
+	best_sub = 9999999999
+	best_orientation = 0
+	print 'Starting to find best orientation'
+	for i in range(0, 360, 1):
+		img2_copy = cv.CloneMat(img2)
+		img2_copy = rotate_image(img2_copy, i)
+		cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
+		sobel_img2_copy = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S,1)
+		cv.Sobel(img2_copy, sobel_img2_copy, 1 , 1 )
+		cv.ConvertScaleAbs(sobel_img2_copy, img2_copy, 1, 1)
+		cv.AbsDiff(img1_copy, img2_copy , subtracted_image)
+		cv.ShowImage("Image 2 being processed", img2_copy )
+		cv.MoveWindow ("Image 2 being processed", (100 + 2*cv.GetSize(img2_copy)[0]), 100)
 		cv.ShowImage("Subtracted_Image", subtracted_image)
-		cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1)[0]), (150 + cv.GetSize(img1)[1]) )
-		sum_of_and = cv.Sum(subtracted_image)
-		if best_sum == 0: best_sum = sum_of_and[0]
-		if sum_of_and[0] > best_sum: 
-			best_sum = sum_of_and[0]
+		cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img2_copy)[0]), (150 + cv.GetSize(img2_copy)[1]) )
+		result = cv.Sum(subtracted_image)	
+		#print i, "result = ", result
+		if result[0] < best_sub: 
+			best_sub = result[0]
 			best_orientation = i
-			print i, "Sum = ", sum_of_and[0], "  best_sum= ", best_sum , "best_orientation =", best_orientation
+			print i, "result = ", result[0], "  best_orientation =", best_orientation
 		key = cv.WaitKey(5)
 		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
-			break
+			break 
 		time.sleep(.01)
 	print 'Finished finding best orientation'
 	return (best_orientation)
@@ -363,14 +351,14 @@ if __name__=="__main__":
 	img2_height = img2_size[1]
 
 	if img1_size <> img2_size:
-		print "Images must be of the same size........End Of Line/"
+		print "Images must be of the same size........End Of L ine/"
 		sys.exit(-1)
 
 	cv.ShowImage("Image 1", img1)
 	cv.MoveWindow ('Image 1',50 ,50 )
 	cv.ShowImage("Image 2", img2)
 	cv.MoveWindow ('Image 2', (50 + (1 * (cv.GetSize(img1)[0]))) , 50)
-	#cv.WaitKey()
+	cv.WaitKey()
 
 	img1_copy = cv.CloneImage(img1)
 	img2_copy = cv.CloneImage(img2)
@@ -400,65 +388,23 @@ if __name__=="__main__":
 		img1_copy = img1
 		print "Finding Center of Scaled Corrected Image 2..."
 		coin2_center = find_center_of_coin(img2_copy)
-	
-		#temp_img = SimpleCV.Image(sys.argv[2]).toGray()
-
-	#find center of coins after rescaling
-	#print "Finding center of both coins after rescaling....."
-	#coin1_center = find_center_of_coin(img1_copy)
-	#coin2_center = find_center_of_coin(img2_copy)
-
-	"""
-		print "Image 2 must be scaled:", scale, "%"
-		scaled_img = temp_img.scale(scale)
-		#scaled_img = scaled_img.grayscale()
-		scaled_img = scaled_img.getBitmap()
-		cv.ShowImage("Scale Correct Image", scaled_img)
-		temp_gray = cv.CreateImage(cv.GetSize(scaled_img), 8, 1)
-		cv.CvtColor(scaled_img, temp_gray, cv.CV_RGB2GRAY)
-		temp_gray_copy = cv.CloneImage(temp_gray)
-	"""
-	#cv.ShowImage("Image 1_copy", img1_copy)
-	#cv.ShowImage("Image 2_copy", img2_copy)
-	#cv.WaitKey()
-	#sys.exit(-1)
-
 
 	#crop out center of coin based on found center
 	print "Cropping center of original and scaled corrected images..."
-	coin1_center_crop = center_crop(img1_copy, coin1_center, 50)
+	coin1_center_crop = center_crop(img1_copy, coin1_center, 72)
 	cv.ShowImage("Crop Center of Coin1", coin1_center_crop)
 	cv.MoveWindow ('Crop Center of Coin1', 100, 100)
 	#cv.WaitKey()
-	coin2_center_crop = center_crop(img2_copy, coin2_center, 50)
+	coin2_center_crop = center_crop(img2_copy, coin2_center, 72)
 	cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
 	cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin1_center_crop)[0])) )
-	#cv.WaitKey()
-
-	#obj_size = cv.GetSize(coin1_center_crop) 
-	#obj_width = obj_size[0]
-	#obj_height = obj_size[1]
-	#img1_copy = cv.CreateImage( (cv.GetSize(coin1_center_crop)),img2_copy1)
-	#img2_copy = cv.CreateImage( (cv.GetSize(coin2_center_crop)), 8, 1)
-	#temp_img  = cv.CreateImage( (cv.GetSize(coin2_center_crop)), 8, 1)
-	#print img1_copy, img2_copy
- 	
-	#img1_copy = cv.GetImage(coin1_center_crop)
-	#img2_copy = cv.GetImage(coin2_center_crop)
-	#cv.CvtColor(img2_copy, temp_img, cv.CV_RGB2GRAY)
-
-
-	
-	#print "mats?:", coin1_center_crop, coin2_center_crop
-	#print "these are the cropped images: ", img1_copy, img2_copy
 	cv.WaitKey()
 
-
-	"""
+	
 	#Canny orientation
-	i=150
-	img1_copy = cv.CloneMat(coin1_center_crop) 
-	img2_copy = cv.CloneMat(coin2_center_crop)
+	#i=150
+	#img1_copy = cv.CloneMat(coin1_center_crop) 
+	#img2_copy = cv.CloneMat(coin2_center_crop)
 	#img1_pil = CVtoPIL(img1_copy)
 	#img2_pil = CVtoPIL(img2_copy)
 	#img1_pil = ImageOps.equalize(img1_pil) 
@@ -471,84 +417,40 @@ if __name__=="__main__":
 	#cv.ShowImage("Equalized Image 2_copy", img2_copy)
 	#cv.MoveWindow ("Equalized Image 2_copy", (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (155 + (cv.GetSize(coin1_center_crop)[0])) )
 	#cv.WaitKey()
-	#time.sleep(2)
-
 	#cv.Erode(img1_copy, img1_copy , element=None, iterations=1)
 	#cv.Erode(img2_copy, img2_copy , element=None, iterations=1)
 	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
-
-	cv.Smooth(img1_copy , img1_copy, cv.CV_MEDIAN,3, 3)
-	cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN, 3, 3)
-	cv.Canny(img1_copy , img1_copy  ,cv.Round((i/2)),i, 3)
-	cv.Canny(img2_copy , img2_copy  ,cv.Round((i/2)),i, 3)
+	#cv.Smooth(img1_copy , img1_copy, cv.CV_MEDIAN,3, 3)
+	#cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN, 3, 3)
+	#cv.Canny(img1_copy , img1_copy  ,cv.Round((i/2)),i, 3)
+	#cv.Canny(img2_copy , img2_copy  ,cv.Round((i/2)),i, 3)
 	#maybe canny until pixel count is close???????????????
-	cv.ShowImage  ("Canny Coin 1", img1_copy )
-	cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
-	cv.ShowImage  ("Canny Coin 2", img2_copy )
-	cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (125 + (cv.GetSize(coin1_center_crop)[0])) )
-	print "Press any key to find correct orientation"  
+	#cv.ShowImage  ("Canny Coin 1", img1_copy )
+	#cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
+	#cv.ShowImage  ("Canny Coin 2", img2_copy )
+	#cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (125 + (cv.GetSize(coin1_center_crop)[0])) )
+	#print "Press any key to find correct CANNY orientation"  
 	#cv.WaitKey()
-	degrees = get_orientation(img1_copy, img2_copy)
+	#degrees = get_orientation_canny(img1_copy, img2_copy)
+	#print "Degrees Re-oriented: ", degrees
+	#img3 = cv.CloneMat(coin2_center_crop)
+	#img3 = rotate_image(coin2_center_crop, degrees)
+	#cv.ShowImage("CANNY Corrected Image2", img3 )
+	#cv.MoveWindow ("CANNY Corrected Image2", (101 + (1 * (cv.GetSize(img1_copy)[0]))) , 100)
+	#cv.WaitKey() 
+
+	img1_copy = cv.CloneMat(coin1_center_crop) 
+	img2_copy = cv.CloneMat(coin2_center_crop)
+	print "Press any key to find correct SOBEL orientation"  
+	degrees = get_orientation_sobel(img1_copy, img2_copy)
 	print "Degrees Re-oriented: ", degrees
 	img3 = cv.CloneMat(coin2_center_crop)
 	img3 = rotate_image(coin2_center_crop, degrees)
-	cv.ShowImage("Orientation Corrected Image2", img3 )
-	cv.MoveWindow ("Orientation Corrected Image2", 100, 800)
-	print "i=", i
+	cv.ShowImage("SOBEL Corrected Image2", img3 )
+	cv.MoveWindow ("SOBEL Corrected Image2", (101 + (2 * (cv.GetSize(img1_copy)[0]))) , 100)
 	cv.WaitKey() 
-	""" 
-	"""
-	#pil orientation
-	img1_copy = cv.CloneMat(coin1_center_crop) 
-	img2_copy = cv.CloneMat(coin2_center_crop)
-	img1_pil = CVtoPIL(img1_copy)
-	img2_pil = CVtoPIL(img2_copy)
-	img1_pil = ImageOps.equalize(img1_pil) 
-	img2_pil = ImageOps.equalize(img2_pil)
-	#img1_copy = PILtoCV(img1_pil)
-	#img2_copy = PILtoCV(img2_pil)
 
-	img1_pil = img1_pil.filter(ImageFilter.EDGE_ENHANCE)
-	img2_pil = img2_pil.filter(ImageFilter.EDGE_ENHANCE)
-	img1_pil = img1_pil.filter(ImageFilter.SMOOTH)
-	img2_pil = img2_pil.filter(ImageFilter.SMOOTH)	
-	#img1_pil = img1_pil.filter(ImageFilter.EMBOSS)
-	#img2_pil = img2_pil.filter(ImageFilter.EMBOSS)		
-	img1_pil = img1_pil.filter(ImageFilter.FIND_EDGES)
-	img2_pil = img2_pil.filter(ImageFilter.FIND_EDGES)
-	img1_pil = img1_pil.filter(ImageFilter.SMOOTH)
-	img2_pil = img2_pil.filter(ImageFilter.SMOOTH)
-	#img1_pil = img1_pil.filter(ImageFilter.CONTOUR)
-	#img2_pil = img2_pil.filter(ImageFilter.CONTOUR)
-	#img1_pil = img1_pil.filter(ImageFilter.DETAIL)
-	#img2_pil = img2_pil.filter(ImageFilter.DETAIL)
-
-	#filtHorizontal = [1, 0, -1, 2, 0, -2, 1, 0, -1]
-	#filtVertical   = [1, 2, 1, 0, 0, 0, -1, -2, -1]
-
-	#img1_pil = img1_pil.filter(ImageFilter.BLUR)
-	#img1_pil = img1_pil.filter(ImageFilter.BLUR)
-	#edgeHorizontal = im.filter((3,3), filtHorizontal)
-	#edgeVertical = im.filter((3,3), filtVertical)
-	#img1_pil = img1_pil.filter( (3,3) , filtHorizontal)
-
-	#img2_pil = img2_pil.filter( (3,3) , filtHorizontal)
-	#edgeVertical = im.filter((3,3), filtVertical)
-
-	#BLUR, CONTOUR, DETAIL, EDGE_ENHANCE, EDGE_ENHANCE_MORE, EMBOSS, FIND_EDGES, SMOOTH, SMOOTH_MORE, and SHARPEN. 
-
-
-
-	degrees = get_orientation_PIL1(img1_pil, img2_pil)
-	print "Degrees Re-oriented: ", degrees
-	img3 = cv.CloneMat(coin2_center_crop)	
-	img3 = rotate_image(coin2_center_crop, degrees)
-	cv.ShowImage("PIL Orientation Corrected Image2", img3 )
-	cv.MoveWindow ("PIL Orientation Corrected Image2", 600, 800)
-	#print "i=", i
-	cv.WaitKey() 
-	"""
 	"""
 	### compare using surf
 	img1_copy = cv.CloneMat(coin1_center_crop) 
