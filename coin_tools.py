@@ -12,6 +12,8 @@ import scipy.spatial
 import time
 from common import anorm
 #from functools import partial
+import mahotas
+from scipy.misc import imread, imshow
 
 def match_bruteforce(desc1, desc2, r_threshold = 0.75):
     res = []
@@ -140,6 +142,81 @@ def rmsdiff(img1, img2):
     return math.sqrt(reduce(operator.add,
         map(lambda h, i: h*(i**2), h, range(256))
     ) / (float(img1.size[0]) * img1.size[1]))
+def cv2array(im):
+  depth2dtype = {
+        cv.IPL_DEPTH_8U: 'uint8',
+        cv.IPL_DEPTH_8S: 'int8',
+        cv.IPL_DEPTH_16U: 'uint16',
+        cv.IPL_DEPTH_16S: 'int16',
+        cv.IPL_DEPTH_32S: 'int32',
+        cv.IPL_DEPTH_32F: 'float32',
+        cv.IPL_DEPTH_64F: 'float64',
+    }
 
+  arrdtype=im.depth
+  a = np.fromstring(
+         im.tostring(),
+         dtype=depth2dtype[im.depth],
+         count=im.width*im.height*im.nChannels)
+  a.shape = (im.height,im.width,im.nChannels)
+  return a
+
+def array2cv(a):
+  dtype2depth = {
+        'uint8':   cv.IPL_DEPTH_8U,
+        'int8':    cv.IPL_DEPTH_8S,
+        'uint16':  cv.IPL_DEPTH_16U,
+        'int16':   cv.IPL_DEPTH_16S,
+        'int32':   cv.IPL_DEPTH_32S,
+        'float32': cv.IPL_DEPTH_32F,
+        'float64': cv.IPL_DEPTH_64F,
+    }
+  try:
+    nChannels = a.shape[2]
+  except:
+    nChannels = 1
+  cv_im = cv.CreateImageHeader((a.shape[1],a.shape[0]),
+          dtype2depth[str(a.dtype)],
+          nChannels)
+  cv.SetData(cv_im, a.tostring(),
+             a.dtype.itemsize*nChannels*a.shape[1])
+  return cv_im
+def get_LBP_fingerprint(img_cv, sections = 8):
+	# - -------- this function takes and image and the number of sections to divide the image into (resolution of fingerprint)
+	# ---------- returns a concatenated histogram will be the 'fingerprint' of the feature to find (the date) image
+	img_size = cv.GetSize(img_cv)
+	img_width = img_size[0]
+	img_height = img_size[1]
+	#print "imge size = img_wdith= ", img_width, "  img_height=", img_height, "  sections=", sections
+	#cv.WaitKey()
+	xsegs = img_width  / sections
+	ysegs = img_height / sections
+	fingerprint = []
+	#print "xsegs, ysegs = ", xsegs, ysegs 
+	#print obj_width % xsegs, obj_height % ysegs
+	for yy in range(0, img_height-ysegs+1 , ysegs):
+		for xx in range(0, img_width-xsegs+1, xsegs):
+			#print "Processing section =", xx, yy, xx+xsegs, yy+ysegs
+			#pt1 = (xx, yy)
+			#pt2 = (xx+xsegs, yy+ysegs)
+			box = (xx, yy, xsegs, ysegs)
+			#print "box = ", box
+			#cropped_img1 = img.crop(box)
+			cropped_img1 = cv.GetSubRect(img_cv, box)
+			cv.ShowImage("cropped_img1 ", cropped_img1 )
+			#print "crop size", cv.GetSize(cropped_img1)
+			cropped_img1 = cv.CloneMat(cropped_img1)
+			cropped_img1 = cv.GetImage(cropped_img1)
+			#cv.WaitKey()
+			pixels = cv2array(cropped_img1)
+			#pixels_avg = scipy.mean(pixels,2)
+			lbp1 = mahotas.features.lbp(pixels , 1, 8, ignore_zeros=False)
+			#print lbp1.ndim, lbp1.size
+			#print "mahotas lbp histogram: ", lbp1
+			fingerprint.append(lbp1)
+	#print fingerprint.ndim, fingerprint.size
+	#print 'THE ENTIRE FINGERPRINT = ', fingerprint[2], fingerprint[2][0]
+	
+	return fingerprint
 
 

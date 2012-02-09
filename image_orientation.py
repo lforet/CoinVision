@@ -23,6 +23,10 @@ from coin_tools import *
 #from functools import partial
 
 
+##Globals
+sample_size = 50
+
+
 def surf_dif(img1, img2):
 	#only features with a keypoint.hessian > 600 will be extracted
 	#using extended descriptors (1) -> 128 elements each
@@ -295,9 +299,9 @@ def get_orientation_sobel(img1, img2):
 		cv.ConvertScaleAbs(sobel_img2_copy, img2_copy, 1, 1)
 		cv.AbsDiff(img1_copy, img2_copy , subtracted_image)
 		cv.ShowImage("Image 2 being processed", img2_copy )
-		cv.MoveWindow ("Image 2 being processed", (100 + 2*cv.GetSize(img2_copy)[0]), 100)
+		cv.MoveWindow ("Image 2 being processed", (100 + 1*cv.GetSize(img2_copy)[0]), 100)
 		cv.ShowImage("Subtracted_Image", subtracted_image)
-		cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img2_copy)[0]), (150 + cv.GetSize(img2_copy)[1]) )
+		cv.MoveWindow ("Subtracted_Image", (100 + 1*cv.GetSize(img2_copy)[0]), (150 + cv.GetSize(img2_copy)[1]) )
 		result = cv.Sum(subtracted_image)	
 		#print i, "result = ", result
 		if result[0] < best_sub: 
@@ -391,16 +395,31 @@ if __name__=="__main__":
 
 	#crop out center of coin based on found center
 	print "Cropping center of original and scaled corrected images..."
-	coin1_center_crop = center_crop(img1_copy, coin1_center, 72)
+	coin1_center_crop = center_crop(img1_copy, coin1_center, sample_size)
 	cv.ShowImage("Crop Center of Coin1", coin1_center_crop)
 	cv.MoveWindow ('Crop Center of Coin1', 100, 100)
 	#cv.WaitKey()
-	coin2_center_crop = center_crop(img2_copy, coin2_center, 72)
+	coin2_center_crop = center_crop(img2_copy, coin2_center, sample_size)
 	cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
 	cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin1_center_crop)[0])) )
 	cv.WaitKey()
 
-	
+	img1_copy = cv.CloneMat(coin1_center_crop) 
+	img2_copy = cv.CloneMat(coin2_center_crop)
+	print "Press any key to find correct SOBEL orientation"  
+	degrees = get_orientation_sobel(img1_copy, img2_copy)
+	print "Degrees Re-oriented: ", degrees
+	img3 = cv.CloneImage (img2)	
+	img3 = rotate_image(img2, degrees)
+	#actually need to show scaled image not just image1
+	cv.DestroyWindow("Image 1")
+	cv.ShowImage("Image 1", img1)
+	cv.MoveWindow ('Image 1',50 ,50 )
+	cv.ShowImage("SOBEL Orientation Corrected Image2", img3 )
+	cv.MoveWindow ("SOBEL Orientation Corrected Image2", 50 , (50 + (1 * (cv.GetSize(img1)[0]))) )
+	cv.WaitKey() 
+
+
 	#Canny orientation
 	#i=150
 	#img1_copy = cv.CloneMat(coin1_center_crop) 
@@ -440,16 +459,7 @@ if __name__=="__main__":
 	#cv.MoveWindow ("CANNY Corrected Image2", (101 + (1 * (cv.GetSize(img1_copy)[0]))) , 100)
 	#cv.WaitKey() 
 
-	img1_copy = cv.CloneMat(coin1_center_crop) 
-	img2_copy = cv.CloneMat(coin2_center_crop)
-	print "Press any key to find correct SOBEL orientation"  
-	degrees = get_orientation_sobel(img1_copy, img2_copy)
-	print "Degrees Re-oriented: ", degrees
-	img3 = cv.CloneMat(coin2_center_crop)
-	img3 = rotate_image(coin2_center_crop, degrees)
-	cv.ShowImage("SOBEL Corrected Image2", img3 )
-	cv.MoveWindow ("SOBEL Corrected Image2", (101 + (2 * (cv.GetSize(img1_copy)[0]))) , 100)
-	cv.WaitKey() 
+
 
 	"""
 	### compare using surf
@@ -496,50 +506,9 @@ if __name__=="__main__":
 	cv.WaitKey() 
 	"""
 
-	print "Using Sobel"
-	img1_copy = cv.CloneMat(coin1_center_crop) 
-	img2_copy = cv.CloneMat(coin2_center_crop)
-	#img1_pil = CVtoPIL(img1_copy)
-	#img2_pil = CVtoPIL(img2_copy)
-	#img1_pil = ImageOps.equalize(img1_pil) 
-	#img2_pil = ImageOps.equalize(img2_pil)
-	#img1_copy = PILtoCV(img1_pil)
-	#img2_copy = PILtoCV(img2_pil)
-	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
-	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN, 3, 3)
-	#cv.Canny(img1_copy ,img1_copy  ,cv.Round((i/2)),i, 3)
-	#cv.Canny(img2_copy, img2_copy  ,cv.Round((i/2)),i, 3)
-	sobel_img1_copy = cv.CreateImage(cv.GetSize(img1_copy), cv.IPL_DEPTH_16S,1)
-	sobel_img2_copy = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S,1)
-	cv.Sobel(img1_copy, sobel_img1_copy, 1 , 0 )
-	cv.Sobel(img2_copy, sobel_img2_copy, 1 , 0 )
-	cv.ConvertScaleAbs(sobel_img1_copy, img1_copy, 1, 0)
-	cv.ConvertScaleAbs(sobel_img2_copy, img2_copy, 1, 0)
-	cv.ShowImage("SOBEL Image1", img1_copy )
-	cv.ShowImage("SOBEL Image2", img2_copy )
-	cv.MoveWindow ('SOBEL Image1', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
-	cv.MoveWindow ("SOBEL Image2", (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (125 + (cv.GetSize(coin1_center_crop)[0])) )
-	cv.WaitKey()
 
-	img1_pil = CVtoPIL(img1_copy)
-	img2_pil = CVtoPIL(img2_copy)
-	#img1_pil = ImageOps.equalize(img1_pil) 
-	#img2_pil = ImageOps.equalize(img2_pil)
-	#img1_copy = PILtoCV(img1_pil)
-	#img2_copy = PILtoCV(img2_pil)
-	#img1_pil = img1_pil.filter(ImageFilter.FIND_EDGES)
-	#img2_pil = img2_pil.filter(ImageFilter.FIND_EDGES)
-	degrees = get_orientation_PIL1(img1_pil, img2_pil)
-	print "Degrees Re-oriented: ", degrees
-	img3 = cv.CloneImage (img2)	
-	img3 = rotate_image(img2, degrees)
-	#actually need to show scaled image not just image1
-	cv.DestroyWindow("Image 1")
-	cv.ShowImage("Image 1", img1)
-	cv.MoveWindow ('Image 1',50 ,50 )
-	cv.ShowImage("SOBEL Orientation Corrected Image2", img3 )
-	cv.MoveWindow ("SOBEL Orientation Corrected Image2", 50 , (50 + (1 * (cv.GetSize(img1)[0]))) )
-	cv.WaitKey() 
+
+
 	"""
 	print "Using Laplace"
 	img1_copy = cv.CloneMat(coin1_center_crop) 
