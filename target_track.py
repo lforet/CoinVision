@@ -56,7 +56,7 @@ class Target:
             points = []
 
             while contour:
-                bound_rect = cv.BoundingRect(lis t(contour))
+                bound_rect = cv.BoundingRect(list(contour))
                 contour = contour.h_next()
 
                 pt1 = (bound_rect[0], bound_rect[1])

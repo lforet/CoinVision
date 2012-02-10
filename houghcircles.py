@@ -94,7 +94,7 @@ def on_trackbar1(position):
 				#print "pil image size = ", im.size
 				#im.show()
 				#im.save("temp2.png")
-				#cropped2 = highgui.cvLoadImage("temp2.png")
+				cropped2 = highgui.cvLoadImage("temp2.png")
                                 #cvShowImage( "cropped", cropped2)
 
 	except:
@@ -150,7 +150,7 @@ def on_mouse( event, x, y, flags, param ):
 
     if event==CV_EVENT_LBUTTONDOWN:
         cvLogPolar( src, dst, cvPoint2D32f(x,y), 40, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS );
-        #cvLogPolar( dst, src2, cvPoint2D32f(x,y), 40, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS+CV_WARP_INVERSE_MAP );
+        cvLogPolar( dst, src2, cvPoint2D32f(x,y), 40, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS+CV_WARP_INVERSE_MAP );
         #cvShowImage( "log-polar", dst );
         #cvShowImage( "inverse log-polar", src2 );
 
