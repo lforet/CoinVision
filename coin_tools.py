@@ -181,6 +181,8 @@ def array2cv(a):
   cv.SetData(cv_im, a.tostring(),
              a.dtype.itemsize*nChannels*a.shape[1])
   return cv_im
+
+
 def get_LBP_fingerprint(img_cv, sections = 8):
 	# - -------- this function takes and image and the number of sections to divide the image into (resolution of fingerprint)
 	# ---------- returns a concatenated histogram will be the 'fingerprint' of the feature to find (the date) image
@@ -203,11 +205,11 @@ def get_LBP_fingerprint(img_cv, sections = 8):
 			#print "box = ", box
 			#cropped_img1 = img.crop(box)
 			cropped_img1 = cv.GetSubRect(img_cv, box)
-			cv.ShowImage("cropped_img1 ", cropped_img1 )
+			cv.ShowImage("Fingerprint", cropped_img1 )
 			#print "crop size", cv.GetSize(cropped_img1)
 			cropped_img1 = cv.CloneMat(cropped_img1)
 			cropped_img1 = cv.GetImage(cropped_img1)
-			#cv.WaitKey()
+			cv.WaitKey(5)
 			pixels = cv2array(cropped_img1)
 			#pixels_avg = scipy.mean(pixels,2)
 			lbp1 = mahotas.features.lbp(pixels , 1, 8, ignore_zeros=False)
