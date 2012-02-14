@@ -25,7 +25,7 @@ if __name__ == "__main__":
     lines = 0;
     cvCanny( src, dst, 50, 200, 3 );
     cvCvtColor( dst, color_dst, CV_GRAY2BGR );
-
+    #USE_STANDARD = True
     if USE_STANDARD:
         lines = cvHoughLines2( dst, storage, CV_HOUGH_STANDARD, 1, CV_PI/180, 100, 0, 0 );
 
@@ -47,6 +47,10 @@ if __name__ == "__main__":
 
     else:
         lines = cvHoughLines2( dst, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/180, 50, 50, 10 );
+	
+        print lines
+        print
+        #print len(lines)
         for line in lines:
             cvLine( color_dst, line[0], line[1], CV_RGB(255,0,0), 3, 8 );
 	    print line[0], " ", line[1]

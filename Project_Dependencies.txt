@@ -21,3 +21,11 @@ add this:
 PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
 export PKG_CONFIG_PATH
 
+
+We have a repository with Orange packages for i386 and amd64 platforms. You should add the repository to your list of repositories by adding those two lines to /etc/apt/sources.list file:
+
+deb http://orange.biolab.si/debian squeeze main
+deb-src http://orange.biolab.si/debian squeeze main 
+
+After updating the list of known packages (aptitude update) you can install, for example, orange-canvas package (aptitude install orange-canvas). Packages are not signed as they are made automatically so you will probably be warned about this. 
+

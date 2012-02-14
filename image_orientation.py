@@ -24,7 +24,7 @@ from coin_tools import *
 
 
 ##Globals
-sample_size = 50
+sample_size = 72
 
 
 def surf_dif(img1, img2):
@@ -181,49 +181,7 @@ def center_crop(img, center, crop_size):
 	return center_crop
 
 
-def find_center_of_coin(img):
-	#create storage fo circle data
-	storage = cv.CreateMat(50, 1, cv.CV_32FC3)
-	#storage = cv.CreateMemStorage(0)
-	cv.SetZero(storage)
-	#img_copy = cv.CreateImage((img.width, img.height)), original_img.depth, img.nChannels)
-	img_copy = cv.CloneImage(img)
-	edges = cv.CreateImage(cv.GetSize(img), 8, 1)
-	#print edges, img
-	cv.Smooth(img , edges , cv.CV_GAUSSIAN,3, 3)
-	#cv.Canny(edges, edges, 50, 100, 3)
-	#cv.Smooth(edges, edges, cv.CV_GAUSSIAN, 3, 3)
-	img_copy2 = cv.CloneImage(img_copy)
-	#cv.ShowImage("grayed center image", edges)
-	#cv.WaitKey()
-	best_circle = ((0,0),0)
-	#minRadius = 10; maxRadius = img.height
-	canny = 175; param2 = 1;
-	#for minRadius in range ((img.height/4), (img.height/2), 10):
-	for minRadius in range (100, 190, 10):
-		img_copy = cv.CloneImage(img_copy2)
-		#for maxRadius in range ((img.height/2)+50, img.height, 10):
-		for maxRadius in range (190, 260, 10):
-			#print "minRadius: ", minRadius, " maxRadius: ", maxRadius
-			circles = cv.HoughCircles(edges, storage, cv.CV_HOUGH_GRADIENT, 1, img.height, canny, param2, minRadius, maxRadius)
-			
-			if storage.rows > 0:
-				for i in range(0, storage.rows):
-					#print "Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], " minRadius: ", minRadius, " maxRadius: ", maxRadius
-					cv.WaitKey(5)
-					time.sleep(.01)
-					center = int(np.asarray(storage)[i][0][0]), int(np.asarray(storage)[i][0][1])
-					radius = int(np.asarray(storage)[i][0][2])
-					#print center, radius
-					cv.Circle(img_copy, center, radius, cv.CV_RGB(255, 0, 0), 1, cv.CV_AA, 0 )
-					cv.Circle(img_copy, center, 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
-					cv.ShowImage("Center of Coin", img_copy)
-					cv.MoveWindow ('Center of Coin', 50 , (50 + (1 * (cv.GetSize(img_copy)[0]))))
-					if (radius > best_circle[1]) & (radius > 150) & (radius < img.height/1.5):
-						best_circle = (center, radius)
-						print "Found Best Circle---Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], " minRadius: ", minRadius, " maxRadius: ", maxRadius
 
-	return best_circle
 
 def rmsdiff(img1, img2):
     "Calculate the root-mean-square difference between two images"
@@ -238,43 +196,47 @@ def get_orientation_canny(img1, img2):
 	#x=190 
 	subtracted_image = cv.CreateImage(cv.GetSize(img1), 8, 1)
 	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)	
-
 	best_sub = 999999999
 	best_orientation = 0
 	print 'Starting to find best orientation'
 	best_canny  = 0
 	best_dif = 9999999
-	for x in range(20, 200, 10):
-		img1_copy = cv.CloneMat(img1)
-		cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
-		cv.Canny(img1_copy , img1_copy  ,x/2,x, 3)
-		cv.ShowImage  ("Canny Coin 1", img1_copy )
-		cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
-		for i in range(1, 360):
-			img2_copy = cv.CloneMat(img2)
-			img2_copy = rotate_image(img2_copy, i)
-			cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
-			cv.Canny(img2_copy , img2_copy  ,x/2,x, 3)
-			cv.AbsDiff(img1_copy, img2_copy , subtracted_image)
-			cv.ShowImage  ("Canny Coin 2", img2_copy )
-			cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(img1)[0]))) , (125 + (cv.GetSize(img1)[0])) )
-			cv.ShowImage("Subtracted_Image", subtracted_image)
-			cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1)[0]), (125 + cv.GetSize(img1)[1]) )
-			result = cv.Sum(subtracted_image)	
-			#print i, "result = ", result
-			if result[0] < best_sub: 
-				best_sub = result[0]
-				best_orientation = i
-				print i, "result = ", result[0], "  best_orientation =", best_orientation
-				dif = math.fabs(265-best_orientation)
-				if dif < best_dif: 
-					best_dif = dif
-					best_canny = x
-			key = cv.WaitKey(5)
-			if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
-				break 
-			time.sleep(.01)
-		print x, "   best canny: ", best_canny, "  best dif= ", best_dif
+	#for x in range(20, 200, 10):
+	x = 160
+	img1_copy = cv.CloneMat(img1)
+	cv.Smooth(img1_copy , img1_copy, cv.CV_MEDIAN,3, 3)
+	cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+	cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+	cv.ShowImage  ("Canny Coin 1", img1_copy )
+	cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
+	for i in range(1, 360):
+		img2_copy = cv.CloneMat(img2)
+		img2_copy = rotate_image(img2_copy, i)
+		cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN,3, 3)
+		cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
+		cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
+		cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
+		cv.AbsDiff(img1_copy, img2_copy , subtracted_image)
+		cv.ShowImage  ("Canny Coin 2", img2_copy )
+		cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(img1)[0]))) , (125 + (cv.GetSize(img1)[0])) )
+		cv.ShowImage("Subtracted_Image", subtracted_image)
+		cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1)[0]), (125 + cv.GetSize(img1)[1]) )
+		result = cv.Sum(subtracted_image)	
+		#print i, "result = ", result
+		if result[0] < best_sub: 
+			best_sub = result[0]
+			best_orientation = i
+			print i, "result = ", result[0], "  best_orientation =", best_orientation
+			#dif = math.fabs(265-best_orientation)
+			#if dif < best_dif: 
+			#	best_dif = dif
+			#	best_canny = x
+		key = cv.WaitKey(5)
+		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
+			break 
+		#time.sleep(.01)
+	print x, "   best canny: ", best_canny, "  best dif= ", best_dif
 	print 'Finished finding best orientation'
 	return (best_orientation)
 
@@ -288,6 +250,7 @@ def get_orientation_sobel(img1, img2):
 	cv.Sobel(img1_copy, sobel_img1_copy, 1 , 1 )
 	cv.ConvertScaleAbs(sobel_img1_copy, img1_copy, 1, 1)
 	best_sub = 9999999999
+	#best_sub = 0
 	best_orientation = 0
 	print 'Starting to find best orientation'
 	for i in range(0, 360, 1):
@@ -298,6 +261,8 @@ def get_orientation_sobel(img1, img2):
 		cv.Sobel(img2_copy, sobel_img2_copy, 1 , 1 )
 		cv.ConvertScaleAbs(sobel_img2_copy, img2_copy, 1, 1)
 		cv.AbsDiff(img1_copy, img2_copy , subtracted_image)
+		#cv.And(img1_copy, img2_copy , subtracted_image)
+		#cv.Sub(img1_copy, img2_copy , subtracted_image)
 		cv.ShowImage("Image 2 being processed", img2_copy )
 		cv.MoveWindow ("Image 2 being processed", (100 + 1*cv.GetSize(img2_copy)[0]), 100)
 		cv.ShowImage("Subtracted_Image", subtracted_image)
@@ -314,23 +279,6 @@ def get_orientation_sobel(img1, img2):
 		time.sleep(.01)
 	print 'Finished finding best orientation'
 	return (best_orientation)
-
-def rotate_image(img, degrees):
-	"""
-    rotate(scr1, degrees) -> image
-    Parameters:	
-
-         *  image - source image
-         *  angle (integer) - The rotation angle in degrees. Positive values mean counter-clockwise 	rotation 
-	"""
-	temp_img = cv.CreateImage(cv.GetSize(img), 8, img.channels)
-	mapMatrix = cv.CreateMat( 2, 3, cv.CV_32FC1 )
-	img_size = cv.GetSize(img)
-	img_center = (int(img_size[0]/2), int(img_size[1]/2))
-	cv.GetRotationMatrix2D(img_center, degrees, 1.0, mapMatrix)
-	cv.WarpAffine(img , temp_img, mapMatrix, flags=cv.CV_INTER_LINEAR+cv.CV_WARP_FILL_OUTLIERS, fillval=(0, 0, 0, 0))
-	return(temp_img)
-
 
 
 if __name__=="__main__":
@@ -421,9 +369,9 @@ if __name__=="__main__":
 
 
 	#Canny orientation
-	#i=150
-	#img1_copy = cv.CloneMat(coin1_center_crop) 
-	#img2_copy = cv.CloneMat(coin2_center_crop)
+	i=150
+	img1_copy = cv.CloneMat(coin1_center_crop) 
+	img2_copy = cv.CloneMat(coin2_center_crop)
 	#img1_pil = CVtoPIL(img1_copy)
 	#img2_pil = CVtoPIL(img2_copy)
 	#img1_pil = ImageOps.equalize(img1_pil) 
@@ -445,19 +393,19 @@ if __name__=="__main__":
 	#cv.Canny(img1_copy , img1_copy  ,cv.Round((i/2)),i, 3)
 	#cv.Canny(img2_copy , img2_copy  ,cv.Round((i/2)),i, 3)
 	#maybe canny until pixel count is close???????????????
-	#cv.ShowImage  ("Canny Coin 1", img1_copy )
-	#cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
-	#cv.ShowImage  ("Canny Coin 2", img2_copy )
-	#cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (125 + (cv.GetSize(coin1_center_crop)[0])) )
-	#print "Press any key to find correct CANNY orientation"  
+	cv.ShowImage  ("Canny Coin 1", img1_copy )
+	cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , 100)
+	cv.ShowImage  ("Canny Coin 2", img2_copy )
+	cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(coin1_center_crop)[0]))) , (125 + (cv.GetSize(coin1_center_crop)[0])) )
+	print "Press any key to find correct CANNY orientation"  
 	#cv.WaitKey()
-	#degrees = get_orientation_canny(img1_copy, img2_copy)
-	#print "Degrees Re-oriented: ", degrees
-	#img3 = cv.CloneMat(coin2_center_crop)
-	#img3 = rotate_image(coin2_center_crop, degrees)
-	#cv.ShowImage("CANNY Corrected Image2", img3 )
-	#cv.MoveWindow ("CANNY Corrected Image2", (101 + (1 * (cv.GetSize(img1_copy)[0]))) , 100)
-	#cv.WaitKey() 
+	degrees = get_orientation_canny(img1_copy, img2_copy)
+	print "Degrees Re-oriented: ", degrees
+	img3 = cv.CloneMat(coin2_center_crop)
+	img3 = rotate_image(coin2_center_crop, degrees)
+	cv.ShowImage("CANNY Corrected Image2", img3 )
+	cv.MoveWindow ("CANNY Corrected Image2", (101 + (1 * (cv.GetSize(img1_copy)[0]))) , 100)
+	cv.WaitKey() 
 
 
 

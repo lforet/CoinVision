@@ -82,6 +82,7 @@ def findclosest_lpf(a,X):
 			current = item
 			smallest = d
 	return current
+
 def findclosesttaxicab(a,X):
     """finds the vector in X most nearly parallel to a using taxicab metric."""
 
@@ -162,8 +163,9 @@ print X.ndim
 # optimization metrics
 start = time.time()
 for i in data:
-    print i.ndim, X.ndim
-    findclosest_lpf(i,X)
+	print i.ndim, X.ndim
+	#findclosest_lpf(i,X)
+	findclosest(i,X)
 stop = time.time()
 print "findclosest: Dt = %0.2f for %d matches in array of size %d" %\
       (stop - start,len(data),len(X))
@@ -297,7 +299,7 @@ for y in range (230, (img_height-obj_height), 5):
 		h2 = numpy.array(img2.histogram())
 		a = numpy.array(cropped_hu)
 		b = numpy.array(obj_hu)
-	        obj_surf = numpy.array(flatten(obj_keypoints))
+		obj_surf = numpy.array(flatten(obj_keypoints))
 		sample_surf = numpy.array(flatten(keypoints))
 		print b, sample_surf
 		#rms = math.sqrt(reduce(operator.add, map(lambda a,b: (a-b)**2, h1, h2))/len(h1))
