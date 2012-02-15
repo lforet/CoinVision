@@ -4,6 +4,7 @@ import Image
 
 
 img = cv.LoadImageM(sys.argv[1], cv.CV_LOAD_IMAGE_GRAYSCALE)
+img2 = cv.LoadImageM(sys.argv[2], cv.CV_LOAD_IMAGE_GRAYSCALE)
 eig_image = cv.CreateMat(img.rows, img.cols, cv.CV_32FC1)
 temp_image = cv.CreateMat(img.rows, img.cols, cv.CV_32FC1)
 
@@ -44,6 +45,15 @@ for (x,y) in cv.GoodFeaturesToTrack(img, eig_image, temp_image, 10, 0.04, 1.0, u
 	cv.Circle(img, (x,y), 6, (255,0,0),1, cv.CV_AA , 0)
 	cv.ShowImage(window_name, img)
 	cv.WaitKey(5)
+for (x,y) in cv.GoodFeaturesToTrack(img2, eig_image, temp_image, 10, 0.04, 1.0, useHarris = True):
+	print "good feature at", x,y
+	#Circle(img, center, radius, color, thickness=1, lineType=8, shift=0) 
+	cv.Circle(img2, (x,y), 6, (255,0,0),1, cv.CV_AA , 0)
+	cv.ShowImage("img2", img2)
+	cv.WaitKey(5)
+
+
+cv.WaitKey()
 
 #img = cv.LoadImageM("/home/lforet/Downloads/photo.JPG")
 #tempimage = cv.LoadImageM("/home/lforet/Downloads/eye.JPG")	
@@ -60,12 +70,32 @@ for (x,y) in cv.GoodFeaturesToTrack(img, eig_image, temp_image, 10, 0.04, 1.0, u
 # wait some key to end
 
 img = cv.LoadImageM(sys.argv[1], cv.CV_LOAD_IMAGE_GRAYSCALE)
+img2 = cv.LoadImageM(sys.argv[2], cv.CV_LOAD_IMAGE_GRAYSCALE)
+
 (keypoints, descriptors) = cv.ExtractSURF(img, None, cv.CreateMemStorage(), (0, 10000, 4, 1))
 print len(keypoints), len(descriptors)
 
 for ((x, y), laplacian, size, dir, hessian) in keypoints:
 	print "x=%d y=%d laplacian=%d size=%d dir=%f hessian=%f" % (x, y, laplacian, size, dir, hessian)
 	cv.Circle(img, (x,y), size, (255,0,0),1, cv.CV_AA , 0)
+
+
+
+(keypoints, descriptors) = cv.ExtractSURF(img2, None, cv.CreateMemStorage(), (0, 10000, 4, 1))
+print len(keypoints), len(descriptors)
+
+for ((x, y), laplacian, size, dir, hessian) in keypoints:
+	print "x=%d y=%d laplacian=%d size=%d dir=%f hessian=%f" % (x, y, laplacian, size, dir, hessian)
+	cv.Circle(img2, (x,y), size, (255,0,0),1, cv.CV_AA , 0)
+
+
+cv.ShowImage(window_name, img)
+cv.ShowImage("img2", img2)
+
+
+
+cv.WaitKey()
+
 
 (keypoints, descriptors) = cv.ExtractSURF(cv_im, None, cv.CreateMemStorage(), (0, 10000, 4, 1))
 print len(keypoints), len(descriptors)
@@ -83,7 +113,7 @@ cv.ShowImage("Contours",canny_image )
 
 original = cv.LoadImageM(sys.argv[1], cv.CV_LOAD_IMAGE_GRAYSCALE)
 print cv.GetHuMoments(cv.Moments(original))
-print cv.GetHuMoments(cv.Moments(cv_im)) 
+#print cv.GetHuMoments(cv.Moments(cv_im)) 
 
 
 cv.WaitKey(0)

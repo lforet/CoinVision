@@ -4,6 +4,7 @@
 
 import cv
 import optparse
+import sys
 
 
 # definition of some colors
@@ -13,29 +14,29 @@ _green =  (0, 255, 0, 0);
 
 
 #------Add option parameters	 
-parser = optparse.OptionParser()
+#parser = optparse.OptionParser()
 
-parser.add_option('-f', help='filename', dest='image',
-    action='store_true')
+#parser.add_option('-f', help='filename', dest='image',
+#    action='store_true')
 #parser.add_option('-p', help='mandatory option', dest='pan',
 #    action='store_true')
 
-(opts, args) = parser.parse_args()
+#(opts, args) = parser.parse_args()
 
 # Making sure all mandatory options appeared.
 #mandatories = ['image', 'pan']
-mandatories = ['image']
-for m in mandatories:
-    if not opts.__dict__[m]:
-        print "mandatory option is missing\n"
-        parser.print_help()
-        exit(-1)
+#mandatories = ['image']
+#for m in mandatories:
+#    if not opts.__dict__[m]:
+#        print "mandatory option is missing\n"
+#        parser.print_help()
+#        exit(-1)
 
 #print opts.image, args[0]
 
 
 #load image
-img = cv.LoadImageM(args[0], cv.CV_LOAD_IMAGE_GRAYSCALE)
+img = cv.LoadImageM(sys.argv[1], cv.CV_LOAD_IMAGE_GRAYSCALE)
 
 # create the canny image
 canny_image = cv.CreateImage (cv.GetSize (img), 8, 1)
@@ -96,10 +97,10 @@ while contour:
 	bbox = cv.BoundingRect(list(contour))
 
 	# Calculate the x and y coordinate of center
-	x, y = (bbox.x + bbox.width * 0.5), (bbox.y+bbox.height*0.5)
-	print (bbox[0] + bbox[1] *0.5), 
+	#x, y = (bbox.height + bbox.width * 0.5), (bbox.y+bbox.height*0.5)
+	#print (bbox[0] + bbox[1] *0.5), 
 
-	print "is_convex = ", is_convex, "   Center = ", x ,y 
+	#print "is_convex = ", is_convex, "   Center = ", x ,y 
 
 
 
