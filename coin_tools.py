@@ -157,6 +157,37 @@ def match_and_draw(img1, img2, kp1, kp2, desc1, desc2, match, r_threshold):
     vis = draw_match(img1, img2, matched_p1, matched_p2, status, H)
     return vis
 
+
+###########################################################
+	################# NOT FINISHED! 02/16/2012
+def get_scaled_crops(img1, img2, sample_size):
+	# finds center of two images
+	# then scales first image up or down to match second
+	#
+	print "Finding center of coin 1....."
+	coin1_center = find_center_of_coin(img1)
+	print "center of coin 1.....", coin1_center
+	#cv.Circle(img1, coin1_center[0], 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
+	#cv.ShowImage("Coin 1", img1)
+	print "Finding center of coin 2....."
+	coin2_center = find_center_of_coin(img2)
+	print "center of coin 2.....", coin2_center
+	#cv.Circle(img2, coin2_center[0], 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
+	#cv.ShowImage("Coin 2", img2)
+	scaled_img = correct_scale(img1, img2, coin1_center, coin2_center)
+	scaled_img_center = find_center_of_coin(scaled_img)
+	#crop out center of coin based on found center
+	print "Cropping center of original and scaled corrected images..."
+	scaled_img_center_crop = center_crop(scaled_img, scaled_img_center, sample_size)
+	coin2_center_crop = center_crop(img2, coin2_center, sample_size)
+	coin1_center_crop = cv.CloneImage(scaled_img_center_crop)
+	#cv.ShowImage("Crop Center of Coin1", coin1_center_crop)
+	#cv.MoveWindow ('Crop Center of Coin1', (125 + (0 * cv.GetSize(coin1_center_crop)[1])) , (125 + (0 * cv.GetSize(coin1_center_crop)[0])) )
+	#cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
+	#cv.MoveWindow ('Crop Center of Coin2', (125 + (1 * cv.GetSize(coin1_center_crop)[1])), (125 + (0 * cv.GetSize(coin2_center_crop)[0])) )
+	return coin1_center_crop, coin2_center_crop
+
+
 ###########################################################
 
 def center_crop(img, center, crop_size):
@@ -164,8 +195,13 @@ def center_crop(img, center, crop_size):
 	x,y = center[0][0], center[0][1]
 	#radius = center[1]
 	radius = (crop_size * 4)
-	center_crop_topleft = (x-(radius-crop_size), y-(radius-crop_size))
-	center_crop_bottomright = (x+(radius-crop_size), y+(radius-crop_size))
+	tlx = x-(radius-crop_size)
+	tly = y-(radius-crop_size)
+	center_crop_topleft = (tlx, tly)
+	brx = x+(radius-crop_size)
+	bry = y+(radius-crop_size)
+	center_crop_bottomright = (brx, bry)
+	#print center_crop_bottomright 
 	#print "crop top left:     ", center_crop_topleft
 	#print "crop bottom right: ", center_crop_bottomright
 	center_crop = cv.GetSubRect(img, (center_crop_topleft[0], center_crop_topleft[1] , (center_crop_bottomright[0] - center_crop_topleft[0]), (center_crop_bottomright[1] - center_crop_topleft[1])  ))
@@ -373,8 +409,9 @@ def rmsdiff(img1, img2):
 def rms_dist(x,y):   
     return numpy.sqrt(numpy.sum((x-y)**2))
 
-###########################################################
 
+
+############################################################
 
 def cv2array(im):
   depth2dtype = {
@@ -585,6 +622,20 @@ def get_orientation_sobel(img1, img2):
 	print 'Finished finding best orientation'
 	return (best_orientation)
 	#return(best_sub)
+
+
+###########################################################
+#def compare_roi(img1, img2):
+# this will compare three images (coins) and return 
+
+
+
+
+
+
+
+
+
 
 
 
@@ -879,7 +930,7 @@ def compare_images_laplace(img1, img2):
 
 ###########################################################
 
-def compare_images_rms(img1, img2): 
+def compare_images_brightness(img1, img2): 
 	img1_copy = cv.CloneImage(img1)
 	img2_copy = cv.CloneImage(img2)
 	img1_copy = CVtoPIL(img1_copy)
@@ -897,10 +948,18 @@ def compare_images_rms(img1, img2):
 	enh = ImageEnhance.Brightness(img2_copy) 
 	img2_copy = enh.enhance(mean_ratio)
 
+	#
+	#img1_copy = img1_copy.filter(ImageFilter.FIND_EDGES)
+	#img1_copy = img1_copy.filter(ImageFilter.EDGE_ENHANCE)
+	img1_copy = img1_copy.filter(ImageFilter.EMBOSS)
+	#img1_copy = img1_copy.filter(ImageFilter.CONTOUR)
 	img1_copy = img1_copy.filter(ImageFilter.SMOOTH)
-	img1_copy = img1_copy.filter(ImageFilter.FIND_EDGES)
+	#
+	#img2_copy = img2_copy.filter(ImageFilter.FIND_EDGES)
+	#img2_copy = img2_copy.filter(ImageFilter.EDGE_ENHANCE)
+	img2_copy = img2_copy.filter(ImageFilter.EMBOSS)
+	#img2_copy = img2_copy.filter(ImageFilter.CONTOUR)
 	img2_copy = img2_copy.filter(ImageFilter.SMOOTH)
-	img2_copy = img2_copy.filter(ImageFilter.FIND_EDGES)
 
 	img1_copy = PILtoCV(img1_copy)
 	img2_copy = PILtoCV(img2_copy)
@@ -912,22 +971,22 @@ def compare_images_rms(img1, img2):
 	#best_sub = 0
 	best_orientation = 0
 	print 'Starting to find best orientation'
-	for i in range(0, 360, 1):
-
-		img2_copy = rotate_image(temp_copy, i)	
-		cv.ShowImage("Image 2 being processed", img2_copy )
-		cv.MoveWindow ("Image 2 being processed", (100 + 2*cv.GetSize(img2_copy)[0]), 100)
-		#cv.WaitKey()
-		result = cv_img_distance(img1_copy, img2_copy, 'euclidean')[0]
-		#result = rmsdiff(img1_copy, img2_copy)	
-		if result < best_sub: 
-			best_sub = result
-			best_orientation = i
-			print i, "result = ", result, "  best_orientation =", best_orientation
-		key = cv.WaitKey(5)
-		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
-			break 
-		#time.sleep(.01)
+	#for i in range(0, 360, 1):
+	i = 0
+	#	img2_copy = rotate_image(temp_copy, i)	
+	cv.ShowImage("Image 2 being processed", img2_copy )
+	cv.MoveWindow ("Image 2 being processed", (100 + 2*cv.GetSize(img2_copy)[0]), 100)
+	#cv.WaitKey()
+	result = cv_img_distance(img1_copy, img2_copy, 'euclidean')[0]
+	#result = rmsdiff(img1_copy, img2_copy)	
+	if result < best_sub: 
+		best_sub = result
+		best_orientation = i
+		print i, "result = ", result, "  best_orientation =", best_orientation
+	key = cv.WaitKey(50)
+	#if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
+	#	break 
+	#time.sleep(.1)
 	#print 'Finished finding best orientation'
 	#return (best_orientation)
 	return(best_sub)
@@ -1029,7 +1088,7 @@ def compare_images_MatchTemp(img1, img2, sample_size):
 	cv.ShowImage("Crop Center of Scaled Coin1", scaled_img_center_crop)
 	cv.MoveWindow ('Crop Center of Scaled Coin1', 100, 100)
 	coin2_center = find_center_of_coin(img2)
-	coin2_center_crop = center_crop(img2, coin2_center, 70)
+	coin2_center_crop = center_crop(img2, coin2_center, sample_size)
 	cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
 	cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin2_center_crop)[0])) )
 
