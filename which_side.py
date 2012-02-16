@@ -15,6 +15,7 @@ from math import pi
 from opencv import adaptors
 import ImageFilter
 from coin_tools import *
+from pylab import imread, imshow, gray, mean
 
 
 
@@ -37,21 +38,9 @@ if __name__=="__main__":
 		print "******* Could not open image files *******"
 		sys.exit(-1)
 
-	compare_images_MatchTemp(img1, img2, sample_size) 
-
-
-
-	#keypoints1, desc1 = cv.ExtractSURF(img1, None, cv.CreateMemStorage(), (0, 400, 3, 4))
-	#keypoints2, desc2 = cv.ExtractSURF(img2, None, cv.CreateMemStorage(),(0, 400, 3, 4))
-	#print match_flann(desc1, desc2, r_threshold = 0.75)
-	#print "img1 = ", len(keypoints1), "  key2=", len(keypoints2)
-	
-
-	#hist1 = cv.CreateHist(dims, type, ranges, uniform=1)
-	#hist1 = cv2.calcHist(img1)	
-	#print hist1
-	cv.WaitKey()
-	sys.exit(-1)
+	#print cv_img_distance(img1, img2, 'euclidean')[0]
+	#cv.WaitKey()
+	#sys.exit(-1)
 	
 	#img1_copy = cv.CloneImage(img1)
 	#img2_copy = cv.CloneImage(img2)
@@ -92,101 +81,99 @@ if __name__=="__main__":
 	#print coin1_center[1]
 	#cv.WaitKey()
 	
-	#for sample_size in range(10, 70, 10):
-	################## compare to coin2
-	print "Finding center of coin 1....."
-	if coin1_center[1] == 0: coin1_center = find_center_of_coin(img1)
-	print "center of coin 1.....", coin1_center
-	#cv.Circle(img1, coin1_center[0], 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
-	cv.ShowImage("Coin 1", img1)
-	print "Finding center of coin 2....."
-	if coin2_center[1] == 0: coin2_center = find_center_of_coin(img2)
-	print "center of coin 2.....", coin2_center
-	#cv.Circle(img2, coin2_center[0], 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
-	cv.ShowImage("Coin 2", img2)
-	if scaled_img_center[1] == 0: 
-		scaled_img = correct_scale(img1, img2, coin1_center, coin2_center)
-		scaled_img_center = find_center_of_coin(scaled_img)
-	#crop out center of coin based on found center
-	print "Cropping center of original and scaled corrected images..."
-	scaled_img_center_crop = center_crop(scaled_img, scaled_img_center, sample_size)
-	#print "scaled_img_center_crop:", scaled_img_center_crop
-	cv.ShowImage("Crop Center of Scaled Coin1", scaled_img_center_crop)
-	cv.MoveWindow ('Crop Center of Scaled Coin1', 100, 100)
-	#cv.WaitKey()
-	coin2_center_crop = center_crop(img2, coin2_center, sample_size)
-	cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
-	cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin2_center_crop)[0])) )
-	#print "coin2_center_crop:", coin2_center_crop
-	#cv.WaitKey()
-	#print "scaled_img_center_crop, coin2_center_crop:", scaled_img_center_crop, coin2_center_crop
+	for sample_size in range(10, 70, 10):
+		################## compare to coin2
+		print "Finding center of coin 1....."
+		if coin1_center[1] == 0: coin1_center = find_center_of_coin(img1)
+		print "center of coin 1.....", coin1_center
+		#cv.Circle(img1, coin1_center[0], 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
+		cv.ShowImage("Coin 1", img1)
+		print "Finding center of coin 2....."
+		if coin2_center[1] == 0: coin2_center = find_center_of_coin(img2)
+		print "center of coin 2.....", coin2_center
+		#cv.Circle(img2, coin2_center[0], 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
+		cv.ShowImage("Coin 2", img2)
+		if scaled_img_center[1] == 0: 
+			scaled_img = correct_scale(img1, img2, coin1_center, coin2_center)
+			scaled_img_center = find_center_of_coin(scaled_img)
+		#crop out center of coin based on found center
+		print "Cropping center of original and scaled corrected images..."
+		scaled_img_center_crop = center_crop(scaled_img, scaled_img_center, sample_size)
+		#print "scaled_img_center_crop:", scaled_img_center_crop
+		cv.ShowImage("Crop Center of Scaled Coin1", scaled_img_center_crop)
+		cv.MoveWindow ('Crop Center of Scaled Coin1', 100, 100)
+		#cv.WaitKey()
+		coin2_center_crop = center_crop(img2, coin2_center, sample_size)
+		cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
+		cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin2_center_crop)[0])) )
+		#print "coin2_center_crop:", coin2_center_crop
+		#cv.WaitKey()
+		#print "scaled_img_center_crop, coin2_center_crop:", scaled_img_center_crop, coin2_center_crop
 	
-	#c1_sobel = compare_images_rotation(scaled_img_center_crop, coin2_center_crop)
-	c1 = compare_images_canny(scaled_img_center_crop, coin2_center_crop)
-	#c1 = compare_images_lbp(scaled_img_center_crop, coin2_center_crop)
-	#c1 = compare_images_laplace(scaled_img_center_crop, coin2_center_crop)
-	#c1 = compare_images_rms(scaled_img_center_crop, coin2_center_crop)
-	#c1 = compare_images_stddev(scaled_img_center_crop, coin2_center_crop)
-	#c1 = compare_images_var(scaled_img_center_crop, coin2_center_crop)
-	#c1 = compare_images_rms(img1, img2, sample_size)
-	print "comarison coin1-> coin2:", c1
+		#c1  = compare_images_rotation(scaled_img_center_crop, coin2_center_crop)
+		#c1 = compare_images_canny(scaled_img_center_crop, coin2_center_crop)
+		#c1 = compare_images_lbp(scaled_img_center_crop, coin2_center_crop)
+		#c1 = compare_images_laplace(scaled_img_center_crop, coin2_center_crop)
+		c1 = compare_images_rms(scaled_img_center_crop, coin2_center_crop)
+		#c1 = compare_images_stddev(scaled_img_center_crop, coin2_center_crop)
+		#c1 = compare_images_var(scaled_img_center_crop, coin2_center_crop)
+		print "comarison coin1-> coin2:", c1
 
 	
-	#cv.WaitKey()
-	################## compare to coin3
-	print "Finding center of coin 1....."
-	if coin1_center[1] == 0: coin1_center = find_center_of_coin(img1)
-	print "center of coin 1.....", coin1_center
-	#cv.Circle(img1, coin1_center[0], 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
-	cv.ShowImage("Coin 1", img1)
-	print "Finding center of coin 3....."
-	if coin3_center[1] == 0: coin3_center = find_center_of_coin(img3)
-	print "center of coin 3.....", coin3_center
-	#cv.Circle(img3, coin3_center[0], 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
-	cv.ShowImage("Coin 3", img3)
-	if scaled_img_center[1] == 0: 
-		scaled_img = correct_scale(img1, img3, coin1_center, coin3_center)
-		scaled_img_center = find_center_of_coin(scaled_img)
+		#cv.WaitKey()
+		################## compare to coin3
+		print "Finding center of coin 1....."
+		if coin1_center[1] == 0: coin1_center = find_center_of_coin(img1)
+		print "center of coin 1.....", coin1_center
+		#cv.Circle(img1, coin1_center[0], 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
+		cv.ShowImage("Coin 1", img1)
+		print "Finding center of coin 3....."
+		if coin3_center[1] == 0: coin3_center = find_center_of_coin(img3)
+		print "center of coin 3.....", coin3_center
+		#cv.Circle(img3, coin3_center[0], 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
+		cv.ShowImage("Coin 3", img3)
+		if scaled_img_center[1] == 0: 
+			scaled_img = correct_scale(img1, img3, coin1_center, coin3_center)
+			scaled_img_center = find_center_of_coin(scaled_img)
 
-	#crop out center of coin based on found center
-	print "Cropping center of original and scaled corrected images..."
-	scaled_img_center_crop = center_crop(scaled_img, scaled_img_center, sample_size)
-	cv.ShowImage("Crop Center of Scaled Coin1", scaled_img_center_crop)
-	cv.MoveWindow ('Crop Center of Scaled Coin1', 100, 100)
-	#cv.WaitKey()
-	coin3_center_crop = center_crop(img3, coin3_center, sample_size)
-	cv.ShowImage("Crop Center of Coin3", coin3_center_crop)
-	cv.MoveWindow ('Crop Center of Coin3', 100, (125 + 2*(cv.GetSize(coin3_center_crop)[0])) )
+		#crop out center of coin based on found center
+		print "Cropping center of original and scaled corrected images..."
+		scaled_img_center_crop = center_crop(scaled_img, scaled_img_center, sample_size)
+		cv.ShowImage("Crop Center of Scaled Coin1", scaled_img_center_crop)
+		cv.MoveWindow ('Crop Center of Scaled Coin1', 100, 100)
+		#cv.WaitKey()
+		coin3_center_crop = center_crop(img3, coin3_center, sample_size)
+		cv.ShowImage("Crop Center of Coin3", coin3_center_crop)
+		cv.MoveWindow ('Crop Center of Coin3', 100, (125 + 2*(cv.GetSize(coin3_center_crop)[0])) )
 	
-	#cv.WaitKey()
-	#c2_sobel = compare_images_rotation(scaled_img_center_crop, coin3_center_crop)
-	c2 = compare_images_canny(scaled_img_center_crop, coin3_center_crop)
-	#c2 = compare_images_lbp(scaled_img_center_crop, coin3_center_crop)
-	#c2 = compare_images_laplace(scaled_img_center_crop, coin3_center_crop)
-	#c2 = compare_images_rms(scaled_img_center_crop, coin3_center_crop)
-	#c2 = compare_images_stddev(scaled_img_center_crop, coin3_center_crop)
-	#c2 = compare_images_var(scaled_img_center_crop, coin3_center_crop)
-	#c2 = compare_images_rms(img1, img3, sample_size) 
-	print "comarison coin1-> coin3:", c2
-	print
+		#cv.WaitKey()
+		#c2  = compare_images_rotation(scaled_img_center_crop, coin3_center_crop)
+		#c2 = compare_images_canny(scaled_img_center_crop, coin3_center_crop)
+		#c2 = compare_images_lbp(scaled_img_center_crop, coin3_center_crop)
+		#c2 = compare_images_laplace(scaled_img_center_crop, coin3_center_crop)
+		c2 = compare_images_rms(scaled_img_center_crop, coin3_center_crop)
+		#c2 = compare_images_stddev(scaled_img_center_crop, coin3_center_crop)
+		#c2 = compare_images_var(scaled_img_center_crop, coin3_center_crop) 
+		print "comarison coin1-> coin3:", c2
+		print
 
-	#if c1 < c2: 
-	if c1 > c2:
-		found_coin2 = found_coin2 + 1
-		print "coin 1 is more like coin2", found_coin2
+		if c1 < c2: 
+		#if c1 > c2:
+			found_coin2 = found_coin2 + 1
+			print "coin 1 is more like coin2", found_coin2, "   ", found_coin3
 	
-	else:
-		found_coin3 = found_coin3 + 1
-		print "coin 1 is more like coin3", found_coin3
-	dif = math.fabs(c1-c2)
-	print "Dif = ", dif
-	if dif > best_dif: 
-		best_dif = dif
-		best_size = sample_size
-	print
-	print "Best Dif:", best_dif, "  BEST SIZE =", best_size, "   sample_size:", sample_size
-	time.sleep(2)
-	#cv.WaitKey()
+		else:
+			found_coin3 = found_coin3 + 1
+			print "coin 1 is more like coin3", found_coin3, "   ", found_coin2
+		dif = math.fabs(c1-c2)
+		print "Dif = ", dif
+		if dif > best_dif: 
+			best_dif = dif
+			best_size = sample_size
+		print
+		print "Best Dif:", best_dif, "  BEST SIZE =", best_size, "   sample_size:", sample_size
+		time.sleep(2)
+		#cv.WaitKey()
 
 	#print "img1>img1:", c0
 	#print "img1>img2:", c1_sobel
