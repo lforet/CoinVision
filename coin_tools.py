@@ -185,6 +185,7 @@ def get_scaled_crops(img1, img2, sample_size):
 	#cv.MoveWindow ('Crop Center of Coin1', (125 + (0 * cv.GetSize(coin1_center_crop)[1])) , (125 + (0 * cv.GetSize(coin1_center_crop)[0])) )
 	#cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
 	#cv.MoveWindow ('Crop Center of Coin2', (125 + (1 * cv.GetSize(coin1_center_crop)[1])), (125 + (0 * cv.GetSize(coin2_center_crop)[0])) )
+	#cv.WaitKey()
 	return coin1_center_crop, coin2_center_crop
 
 
@@ -831,33 +832,40 @@ def compare_images_lbp(img1, img2):
 	x = 180
 	#img1_copy = cv.CloneImage(img1)
 	img1_copy = cv.GetMat(img1)
-	cv.Smooth(img1_copy , img1_copy, cv.CV_MEDIAN,3, 3)
+	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.EqualizeHist(img1_copy, img1_copy)
 	#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
-	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
 	
 	cv.ShowImage  ("Canny Coin 1", img1_copy )
 	cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
 	img1_lbp = get_LBP_fingerprint(img1_copy, sections = 1)
-	#print "(img1_lbp)=", (img1_lbp)
+	img1_lbp = numpy.array(img1_lbp)
+	img1_lbp = img1_lbp.reshape(1, (img1_lbp.shape[0]*img1_lbp.shape[1]))
+	#print "dim:", img1_lbp.ndim
+	#print img1_lbp 	
+	#print "dim:", img1_lbp.ndim
+	#print img1_lbp 
+	#print "lbp1 len)", 
 	#hu1 =  np.array(cv.GetHuMoments(cv.Moments(img1_copy)))
-
+	#cv.WaitKey()
 
 	#img2_copy = cv.CloneImage(img2)
 	img2_copy = cv.GetMat(img2)
-	cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN,3, 3)
+	#cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN,3, 3)
 	#cv.EqualizeHist(img2_copy, img2_copy)
 	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
-	#cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
 	
 	cv.ShowImage  ("Canny Coin 2", img2_copy )
 	cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(img2)[0]))) , (125 + (cv.GetSize(img2)[0])) )
 	img2_lbp = get_LBP_fingerprint(img2_copy, sections = 1)
+	img2_lbp = numpy.array(img2_lbp)
+	img2_lbp = img2_lbp.reshape(1, (img2_lbp.shape[0]*img2_lbp.shape[1]))
 	#print "(img2_lbp)=", (img2_lbp)
 	#hu2 =  np.array(cv.GetHuMoments(cv.Moments(img2_copy)))
-	#dist = 
 	#print "len(img2_lbp)", len(img2_lbp)
 	distance = scipy.spatial.distance.cdist(img1_lbp, img2_lbp, 'euclidean')
 	#distance = rms_dist(img1_lbp, img2_lbp)
@@ -1091,7 +1099,7 @@ def compare_images_MatchTemp(img1, img2, sample_size):
 	coin2_center_crop = center_crop(img2, coin2_center, sample_size)
 	cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
 	cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin2_center_crop)[0])) )
-
+	
 	#Create the result matrix
 	match_cols =   coin2_center_crop.width  - scaled_img_center_crop.width + 1
 	match_rows =   coin2_center_crop.height - scaled_img_center_crop.height + 1

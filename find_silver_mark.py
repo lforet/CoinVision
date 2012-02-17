@@ -29,6 +29,9 @@ if __name__=="__main__":
 	cv.MoveWindow ('Coin 1',50 ,50 )
 	cv.ShowImage("Coin 2", img2)
 	cv.MoveWindow ('Coin 2', (50 + (1 * (cv.GetSize(img1)[0]))) , 50)
+	font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 1, 1, 0, 3, 8)
+	cv.PutText(img1, "TEST", (100,100), font ,cv.RGB(255,255,255) )
+	cv.ShowImage("Coin 1", img1)
 	cv.WaitKey()
 
 	coin1_center_crop, coin2_center_crop  = get_scaled_crops(img1, img2, sample_size)

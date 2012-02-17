@@ -1,24 +1,66 @@
+import cv2
 import cv
 
-# create windows
-cv.NamedWindow('Camera', cv.CV_WINDOW_AUTOSIZE)
+def get_camera_prop_name(prop_num):
+	prop_str = ""
 
+	#Property identifier. It can be one of the following:
+    if prop_num == 0: prop_str = "CV_CAP_PROP_POS_MSEC" #Current position of the video file in milliseconds.
+    if prop_num == 1: prop_str = "CV_CAP_PROP_POS_FRAMES" # 0-based index of the frame to be decoded/captured next.
+    if prop_num == 2: prop_str = "CV_CAP_PROP_POS_AVI_RATIO" # Relative position of the video file: 0 - start of the film, 1 - end of the film.
+    if prop_num == 3: prop_str = "CV_CAP_PROP_FRAME_WIDTH" # Width of the frames in the video stream.
+    if prop_num == 4: prop_str = "CV_CAP_PROP_FRAME_HEIGHT" # Height of the frames in the video stream.
+    if prop_num == 5: prop_str = "CV_CAP_PROP_FPS" # Frame rate.
+    if prop_num == 6: prop_str = "CV_CAP_PROP_FOURCC" # 4-character code of codec.
+    if prop_num == 7: prop_str = "CV_CAP_PROP_FRAME_COUNT" # Number of frames in the video file.
+    if prop_num == 8: prop_str = "CV_CAP_PROP_FORMAT" # Format of the Mat objects returned by retrieve() .
+    if prop_num == 9: prop_str = "CV_CAP_PROP_MODE" # Backend-specific value indicating the current capture mode.
+    if prop_num == 10: prop_str = "CV_CAP_PROP_BRIGHTNESS" # Brightness of the image (only for cameras).
+    if prop_num == 11: prop_str = "CV_CAP_PROP_CONTRAST" # Contrast of the image (only for cameras).
+    if prop_num == 12: prop_str = "CV_CAP_PROP_SATURATION" # Saturation of the image (only for cameras).
+    if prop_num == 13: prop_str = "CV_CAP_PROP_HUE" # Hue of the image (only for cameras).
+    if prop_num == 14: prop_str = "CV_CAP_PROP_GAIN" # Gain of the image (only for cameras).
+    if prop_num == 15: prop_str = "CV_CAP_PROP_EXPOSURE" # Exposure (only for cameras).
+    if prop_num == 16: prop_str = "CV_CAP_PROP_CONVERT_RGB" # Boolean flags indicating whether images should be converted to RGB.
+    if prop_num == 17: prop_str = "CV_CAP_PROP_WHITE_BALANCE" # Currently unsupported
+    if prop_num == 18: prop_str = "CV_CAP_PROP_RECTIFICATION" # Rectification flag for stereo cameras (note: only supported by DC1394 v 2.x backend currently)
+	return prop_str
+
+
+
+# create windows
+cv2.namedWindow('Camera', cv2.CV_WINDOW_AUTOSIZE)
+#cv2.waitKey()
 # create capture device
 device = 0 # assume we want first device
-capture = cv.CreateCameraCapture(0)
+#capture = cv2.CreateCameraCapture(0)
+capture = cv2.VideoCapture(device)
+
+
+#print capture
+print capture.isOpened()
+cv2.waitKey()
 
 #for i in range (0,20):
-#	print cv.GetCaptureProperty(capture, i)
+	#print cv.GetCaptureProperty(capture, i)
+#	print i, "= ", capture.get(i)
 
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 1600)
-cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 1200)  
+#cv.WaitKey()
+#cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 1600)
+#cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 1200)  
 
+print capture.set(3, 320)
+print capture.set(4, 240)
+
+for i in range (0,20):
+	#print cv.GetCaptureProperty(capture, i)
+	print get_camera_prop_name(i), "= ", capture.get(i)
 # capture the current frame
-frame = cv.QueryFrame(capture)
+#frame = cv.QueryFrame(capture)
 
 # display webcam image
-cv.ShowImage('Camera', frame)
-cv.SaveImage("testpic.png", frame)
+#cv.ShowImage('Camera', frame)
+#cv.SaveImage("testpic.png", frame)
 
 cv.WaitKey()
 

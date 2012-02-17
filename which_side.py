@@ -81,9 +81,9 @@ if __name__=="__main__":
 
 	#c1  = compare_images_rotation(scaled_img_center_crop, coin2_center_crop)
 	#c1 = compare_images_canny(scaled_img_center_crop, coin2_center_crop)
-	#c1 = compare_images_lbp(scaled_img_center_crop, coin2_center_crop)
+	c1 = compare_images_lbp(coin1_center_crop, coin2_center_crop)
 	#c1 = compare_images_laplace(scaled_img_center_crop, coin2_center_crop)
-	c1 = compare_images_brightness(coin1_center_crop, coin2_center_crop)
+	#c1 = compare_images_brightness(coin1_center_crop, coin2_center_crop)
 	#c1 = compare_images_stddev(scaled_img_center_crop, coin2_center_crop)
 	#c1 = compare_images_var(scaled_img_center_crop, coin2_center_crop)
 	print "comarison coin1-> coin2:", c1
@@ -108,9 +108,9 @@ if __name__=="__main__":
 	#cv.WaitKey()
 	#c2  = compare_images_rotation(scaled_img_center_crop, coin3_center_crop)
 	#c2 = compare_images_canny(scaled_img_center_crop, coin3_center_crop)
-	#c2 = compare_images_lbp(scaled_img_center_crop, coin3_center_crop)
+	c2 = compare_images_lbp(coin1_center_crop, coin3_center_crop)
 	#c2 = compare_images_laplace(scaled_img_center_crop, coin3_center_crop)
-	c2 = compare_images_brightness(coin1_center_crop, coin3_center_crop)
+	#c2 = compare_images_brightness(coin1_center_crop, coin3_center_crop)
 	#c2 = compare_images_stddev(scaled_img_center_crop, coin3_center_crop)
 	#c2 = compare_images_var(scaled_img_center_crop, coin3_center_crop) 
 	print "comarison coin1-> coin3:", c2
