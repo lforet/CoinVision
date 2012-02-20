@@ -22,14 +22,17 @@ while 1:
     if len(s) > 0: break
 
 #s = ser.read(100)       # read up to one hundred bytes
-#
+#connected so...
 while 1:
+    ser.write("f")
     s = ser.readline()
     print s
-    if len(s) < 1: break
+    if s == "A":
+		print "com established..."
+		ser.write ("a")
+    #if len(s) < 1: break
     if ser.isOpen():
         print "Connected..."
-
 
 
                        # or as much is in the buffer

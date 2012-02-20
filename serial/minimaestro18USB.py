@@ -317,7 +317,8 @@ def log(*msgline):
     print
 
 class Device(object):
-    def __init__(self,con_port="COM6",ser_port="COM7",timeout=1): #/dev/ttyACM0  and   /dev/ttyACM1  for Linux
+    #def __init__(self,con_port="COM6",ser_port="COM7",timeout=1): #/dev/ttyACM0  and   /dev/ttyACM1  for Linux
+	def __init__(self,con_port="/dev/ttyACM0",ser_port="/dev/ttyACM1",timeout=1): #/dev/ttyACM0  and   /dev/ttyACM1  for Linux
         ############################
         # lets introduce and init the main variables
         self.con = None

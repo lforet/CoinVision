@@ -20,24 +20,31 @@ from pylab import imread, imshow, gray, mean
 
 
 #######################   Globals
-sample_size = 68
+sample_size = 50
 
 
 if __name__=="__main__":
 
-	if len(sys.argv) < 4:
-		print "******* Requires 3 image files of the same size."
-		print "This program will return the angle at which the second is in relation to the first. ***"
-		sys.exit(-1)
+#	if len(sys.argv) < 4:
+#		print "******* Requires 3 image files of the same size."
+#		print "This program will return the angle at which the second is in relation to the first. ***"
+#		sys.exit(-1)
 
 	try:
-		img1 = cv.LoadImage(sys.argv[1],cv.CV_LOAD_IMAGE_GRAYSCALE)
-		img2 = cv.LoadImage(sys.argv[2],cv.CV_LOAD_IMAGE_GRAYSCALE)
-		img3 = cv.LoadImage(sys.argv[3],cv.CV_LOAD_IMAGE_GRAYSCALE)
+		#img1 = cv.LoadImage(sys.argv[1],cv.CV_LOAD_IMAGE_GRAYSCALE)
+		frame = grab_frame(0)
+		img1 = cv.CreateImage(cv.GetSize(frame), cv.IPL_DEPTH_8U, 1)
+		#cv.WaitKey()
+		img1 = CVtoGray(frame)
+		#img1 = CV_enhance_edge(img1)
+		#cv.WaitKey()
+		img2 = cv.LoadImage(sys.argv[1],cv.CV_LOAD_IMAGE_GRAYSCALE)
+		img3 = cv.LoadImage(sys.argv[2],cv.CV_LOAD_IMAGE_GRAYSCALE)
 	except:
 		print "******* Could not open image files *******"
 		sys.exit(-1)
 
+	#print img1, img2, img3
 	#print cv_img_distance(img1, img2, 'euclidean')[0]
 	#cv.WaitKey()
 	#sys.exit(-1)

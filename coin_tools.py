@@ -18,6 +18,68 @@ from common import anorm
 import mahotas
 from scipy.misc import imread, imshow
 
+
+
+def CVtoGray(img):
+	grey_image = cv.CreateImage(cv.GetSize(img), cv.IPL_DEPTH_8U, 1)
+	temp_img = cv.CloneImage(img)
+	cv.CvtColor(temp_img, grey_image, cv.CV_RGB2GRAY)
+	return grey_image
+
+def grab_frame(camera):
+	capture =  cv.CreateCameraCapture(camera)
+	time.sleep(.1)
+	frame = cv.QueryFrame(capture)
+	time.sleep(.1)
+	temp = cv.CloneImage(frame)
+	return temp
+
+def CV_enhance_edge(img):
+	img1_copy = cv.CloneImage(img)
+	img1_copy = CVtoPIL(img1_copy)
+	#img1_copy = img1_copy.filter(ImageFilter.FIND_EDGES)
+	img1_copy = img1_copy.filter(ImageFilter.EDGE_ENHANCE)
+	img1_copy = PILtoCV(img1_copy)
+	return img1_copy
+
+###########################################################
+
+def equalize_brightness(img1, img2): 
+	#equalizes brightness of image to per image two. returns image #1 with brightness adjusted
+	img1_copy = cv.CloneImage(img1)
+	img2_copy = cv.CloneImage(img2)
+
+	img1_copy = CVtoPIL(img1_copy)
+	img2_copy = CVtoPIL(img2_copy)
+
+	#equalize brightness
+	im_stat1 = ImageStat.Stat(img1_copy)
+	img1_copy_mean = im_stat1.mean
+	im_stat2 = ImageStat.Stat(img2_copy)
+	img2_copy_mean = im_stat2.mean
+	print "img1_copy_mean:",img1_copy_mean,"  img2_copy_mean:", img2_copy_mean
+	mean_ratio = img1_copy_mean[0] / img2_copy_mean[0]
+	print "mean_ratio:", mean_ratio 
+	#cv.WaitKey()
+	enh = ImageEnhance.Brightness(img1_copy) 
+	img1_copy = enh.enhance(mean_ratio)
+
+	#img1_copy = img1_copy.filter(ImageFilter.FIND_EDGES)
+	#img1_copy = img1_copy.filter(ImageFilter.EDGE_ENHANCE)
+	#img1_copy = img1_copy.filter(ImageFilter.EMBOSS)
+	#img1_copy = img1_copy.filter(ImageFilter.CONTOUR)
+	#img1_copy = img1_copy.filter(ImageFilter.SMOOTH)
+	#
+	#img2_copy = img2_copy.filter(ImageFilter.FIND_EDGES)
+	#img2_copy = img2_copy.filter(ImageFilter.EDGE_ENHANCE)
+	#img2_copy = img2_copy.filter(ImageFilter.EMBOSS)
+	#img2_copy = img2_copy.filter(ImageFilter.CONTOUR)
+	#img2_copy = img2_copy.filter(ImageFilter.SMOOTH)
+
+	img1_copy = PILtoCV(img1_copy)
+	img2_copy = PILtoCV(img2_copy)
+	return img1_copy
+
 ###########################################################
 
 def surf_dif(img1, img2):
@@ -216,7 +278,7 @@ def center_crop(img, center, crop_size):
 ###########################################################
 
 def resize_img(original_img, scale_percentage):
-	print original_img.height, original_img.width, original_img.nChannels
+	#print original_img.height, original_img.width, original_img.nChannels
 	#resized_img = cv.CreateMat(original_img.rows * scale_percentage , original.cols * scale_percenta, cv.CV_8UC3)
 	resized_img = cv.CreateImage((cv.Round(original_img.width * scale_percentage) , cv.Round(original_img.height * scale_percentage)), original_img.depth, original_img.nChannels)
 	cv.Resize(original_img, resized_img)
@@ -493,15 +555,17 @@ def find_center_of_coin(img):
 	#cv.Smooth(edges, edges, cv.CV_GAUSSIAN, 3, 3)
 	img_copy2 = cv.CloneImage(img_copy)
 	#cv.ShowImage("grayed center image", edges)
+	#print "inside find_center_of_coin"
 	#cv.WaitKey()
 	best_circle = ((0,0),0)
 	#minRadius = 100; maxRadius = 260
-	canny = 175; param2 = 1;
+	canny = 150; param2 = 8;
 	#for minRadius in range ((img.height/4), (img.height/2), 10):
 	for minRadius in range (110, 190, 10):
-		img_copy = cv.CloneImage(img_copy2)
+		#img_copy = cv.CloneImage(img_copy2)
 		#for maxRadius in range ((img.height/2)+50, img.height, 10):
-		for maxRadius in range (190, 260, 10):
+		for maxRadius in range (190, 280, 10):
+			#time.sleep(.01)
 			#print "minRadius: ", minRadius, " maxRadius: ", maxRadius
 			circles = cv.HoughCircles(edges, storage, cv.CV_HOUGH_GRADIENT, 1, img.height, canny, param2, minRadius, maxRadius)
 	
@@ -520,7 +584,7 @@ def find_center_of_coin(img):
 					if (radius > best_circle[1]) & (radius > 150) & (radius < img.height/1.5):
 						best_circle = (center, radius)
 						#print "Found Best Circle---Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], " minRadius: ", minRadius, " maxRadius: ", maxRadius
-
+	#print "done with cirlce"
 	return best_circle
 
 ###########################################################
@@ -628,14 +692,6 @@ def get_orientation_sobel(img1, img2):
 ###########################################################
 #def compare_roi(img1, img2):
 # this will compare three images (coins) and return 
-
-
-
-
-
-
-
-
 
 
 
@@ -829,17 +885,18 @@ def compare_images_canny_sum(img1, img2):
 #########################################################
 
 def compare_images_lbp(img1, img2):
-	x = 180
-	#img1_copy = cv.CloneImage(img1)
+	x = 100
+	img1 = equalize_brightness(img1, img2)
+	
 	img1_copy = cv.GetMat(img1)
 	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.EqualizeHist(img1_copy, img1_copy)
 	#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
-	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
-	
-	cv.ShowImage  ("Canny Coin 1", img1_copy )
-	cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
+	cv.DestroyWindow("LBP Coin 1")
+	cv.ShowImage  ("LBP Coin 1", img1_copy )
+	cv.MoveWindow ('LBP Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
 	img1_lbp = get_LBP_fingerprint(img1_copy, sections = 1)
 	img1_lbp = numpy.array(img1_lbp)
 	img1_lbp = img1_lbp.reshape(1, (img1_lbp.shape[0]*img1_lbp.shape[1]))
@@ -849,21 +906,22 @@ def compare_images_lbp(img1, img2):
 	#print img1_lbp 
 	#print "lbp1 len)", 
 	#hu1 =  np.array(cv.GetHuMoments(cv.Moments(img1_copy)))
-	#cv.WaitKey()
+	cv.WaitKey(10)
 
-	#img2_copy = cv.CloneImage(img2)
 	img2_copy = cv.GetMat(img2)
 	#cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN,3, 3)
 	#cv.EqualizeHist(img2_copy, img2_copy)
 	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
-	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
+	#cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
-	
-	cv.ShowImage  ("Canny Coin 2", img2_copy )
-	cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(img2)[0]))) , (125 + (cv.GetSize(img2)[0])) )
+	cv.DestroyWindow("LBP Coin 2")
+	cv.ShowImage  ("LBP Coin 2", img2_copy )
+	cv.MoveWindow ('LBP Coin 2', (101 + (1 * (cv.GetSize(img2)[0]))) , (125 + (cv.GetSize(img2)[0])) )
 	img2_lbp = get_LBP_fingerprint(img2_copy, sections = 1)
 	img2_lbp = numpy.array(img2_lbp)
 	img2_lbp = img2_lbp.reshape(1, (img2_lbp.shape[0]*img2_lbp.shape[1]))
+	cv.WaitKey(10)
+	#time.sleep(.5)
 	#print "(img2_lbp)=", (img2_lbp)
 	#hu2 =  np.array(cv.GetHuMoments(cv.Moments(img2_copy)))
 	#print "len(img2_lbp)", len(img2_lbp)
@@ -878,7 +936,9 @@ def compare_images_lbp(img1, img2):
 	
 	#print "diff=", diff
 	#print "distance=:",  distance
-	#cv.WaitKey()
+	#cv.DestroyWindow("LBP Coin 1")
+	#cv.DestroyWindow("LBP Coin 1")
+	cv.WaitKey()
 	return (distance)
 
 
@@ -1104,8 +1164,8 @@ def compare_images_MatchTemp(img1, img2, sample_size):
 	match_cols =   coin2_center_crop.width  - scaled_img_center_crop.width + 1
 	match_rows =   coin2_center_crop.height - scaled_img_center_crop.height + 1
 	match_size = (match_cols, match_rows)
-	print match_size
-	print cv.GetSize(img1)
+	#print match_size
+	#print cv.GetSize(img1)
 
 	match = cv.CreateMat( match_size[0], match_size[1] , cv.CV_32FC1)
 	#object2 = cv.CreateImage((img2.width,img2.height), 8, 1)
@@ -1114,7 +1174,7 @@ def compare_images_MatchTemp(img1, img2, sample_size):
 	#cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
 	#cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin2_center_crop)[0])) )
 	cv.MatchTemplate(coin2_center_crop, scaled_img_center_crop, match, cv.CV_TM_SQDIFF);
-	print match
+	#print match
 	cv.ShowImage("match", match)
 
 	cv.WaitKey()

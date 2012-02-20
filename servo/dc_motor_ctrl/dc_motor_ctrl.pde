@@ -1,3 +1,16 @@
+// To use, connect the Arduino to a computer and send commands using a serial terminal.
+// eg AR40#   motor A forwards with a speed of 40
+ 
+#define PwmPinMotorA 5
+#define PwmPinMotorB 11
+#define DirectionPinMotorA 6
+#define DirectionPinMotorB 13
+#define SerialSpeed 9600
+#define BufferLength 16
+#define LineEnd '#'
+ 
+char inputBuffer[BufferLength];
+
 //2-Way motor control
 
 int incomingByte = 0;	// for incoming serial data
@@ -14,6 +27,7 @@ void setup()   {
   pinMode(motorPin2, OUTPUT);  
   // Setup serial com
   Serial.begin(9600);	// opens serial port, sets data rate to 9600 bps
+  Serial.flush();
   establishContact();  // send a byte to establish contact until receiver responds 
 
 }
@@ -25,50 +39,69 @@ void establishContact() {
   }
 }
 
-// the loop() method runs over and over again,
-// as long as the Arduino has power
-void loop()                     
-{
-        char commandbuffer[100];
-        int i=0;
-  	// send data only when you receive data:
-	if (Serial.available() > 0) {
-            while( Serial.available() && i< 99) {
-                commandbuffer[i++] = Serial.read();
-             }
-         commandbuffer[i++]='\0';
-         // read the incoming byte:
-	 //incomingByte = Serial.read();
-	 // say what you got:
-         //if(i>0){
-         //   Serial.print("I received: ");
-         //   Serial.println((char*)commandbuffer);
-         //}
-         //if(i>0){
-         //    if commandbuffer == "a"
-         //      Serial.print("starting motor...");  
-            
-          //}
-		//Serial.println(incomingByte, DEC);
-                //while(var < 100){
-                // now do something 
-                      //var++;
-                      //Serial.print("Hey Andrea Count: ");
-                      //Serial.println(var, DEC);
-                      //delay(10); 
-                      //sum = sum + var^2;
-                      //Serial.print("Sum: ");
-                      //Serial.println(sum, DEC);      
-                //}
-                //var = 0;
-	}
+
+void loop()
+{ 
+  // get a command string form the serial port
+  int inputLength = 0;
+  do {
+    while (!Serial.available()); // wait for input
+    inputBuffer[inputLength] = Serial.read(); // read it in
+  } while (inputBuffer[inputLength] != LineEnd && ++inputLength < BufferLength);
+  inputBuffer[inputLength] = 0; //  add null terminator
+  HandleCommand(inputBuffer, inputLength);
+}
+
+
   //rotateLeft(150, 500);
   //rotateRight(50, 1000);
   //rotateRight(150, 1000);
   //rotateRight(200, 1000);
   //rotateLeft(255, 500);
   //rotateRight(10, 1500);
-}
+// process a command string
+void HandleCommand(char* input, int length)
+{
+  Serial.println(input);
+  if (length < 2) { // not a valid command
+    return;
+  }
+  int value = 0;
+  // calculate number following command
+  if (length > 2) {
+    value = atoi(&input[2]);
+  }
+  int* command = (int*)input;
+  // check commands
+  // note that the two bytes are swapped, ie 'RA' means command AR
+  switch(*command) {
+    case 'FA':
+      rotateLeft(150, 500);
+      delay(500);
+      rotateRight(50, 1000);
+       Serial.println("motor on");
+      //analogWrite(PwmPinMotorA, value);
+      //digitalWrite(DirectionPinMotorA, HIGH);
+      break;
+    case 'RA':
+      // motor A reverse
+      analogWrite(PwmPinMotorA, value);
+      digitalWrite(DirectionPinMotorA, LOW);
+      break;
+    case 'FB':
+      // motor B forwards
+      analogWrite(PwmPinMotorB, value);
+      digitalWrite(DirectionPinMotorB, LOW);
+      break;
+    case 'RB':
+      // motor B reverse
+      analogWrite(PwmPinMotorB, value);
+      digitalWrite(DirectionPinMotorB, HIGH);
+      break;
+    default:
+      break;
+  }  
+} 
 
 void rotateLeft(int speedOfRotate, int length){
   analogWrite(motorPin1, speedOfRotate); //rotates motor
