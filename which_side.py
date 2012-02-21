@@ -16,7 +16,64 @@ from opencv import adaptors
 import ImageFilter
 from coin_tools import *
 from pylab import imread, imshow, gray, mean
+from CoinServoDriver import *
 
+
+def get_new_coin(servo, dc_motor):
+		servo.arm_down()
+		time.sleep(.1)
+		print cv.NamedWindow('Camera', cv.CV_WINDOW_AUTOSIZE)
+		
+		capture =  cv.CreateCameraCapture(1)
+		#time.sleep(.05)
+		cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 320)
+		cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 240)
+		for i in range(0, 16, 1):
+			base_frame = cv.QueryFrame(capture)
+			cv.ShowImage('Camera', base_frame)
+			cv.WaitKey(5)
+			#time.sleep(.01)
+		base_sum = cv.Sum(base_frame)
+		base_mean = ((base_sum[0] + base_sum[1] + base_sum[2])/ ((3*base_frame.height) * (3*base_frame.width)))
+		print "base_mean:", base_mean
+		new_coin = False
+		print 'CoinID Motor Driver Comm OPEN:', dc_motor.isOpen()
+		print 'Connected to: ', dc_motor.portstr
+	
+		while not new_coin:
+			for i in range(0, 10, 1):
+				frame = cv.QueryFrame(capture)
+				cv.ShowImage('Camera', frame)
+				cv.WaitKey(5)
+				#time.sleep(.02)
+			current_sum = cv.Sum(frame)
+			current_mean = ((current_sum[0] + current_sum[1] + current_sum[2])/ ((3*frame.height) * (3*frame.width)))
+			print "current_mean", current_mean
+			result = math.fabs(current_mean - base_mean) 
+			print "dif of means:", result
+			if result > 3:
+				print "New coin...", result
+				sys.stdout.write('\a') #beep
+				new_coin = True
+			#if new_coin == False: time.sleep(2)
+			if new_coin == False: move_motor(dc_motor, "F", 15)
+			if new_coin == False: time.sleep(.5)
+			motor_stop(dc_motor)
+			if new_coin == False: time.sleep(.8)
+		
+def move_motor(dc_motor, direction, speed):
+	if direction == "F":
+		cmd_str = direction + str(speed) + '%\r'
+		print cmd_str
+		dc_motor.write ('GO\r')
+		time.sleep(.01)
+		dc_motor.write (cmd_str)
+		time.sleep(.01)
+		dc_motor.write ('GO\r')
+		time.sleep(.01)
+
+def motor_stop(dc_motor):
+	dc_motor.write ('X\r\n')
 
 
 #######################   Globals
@@ -25,6 +82,22 @@ sample_size = 50
 
 if __name__=="__main__":
 
+ 
+	"""
+	dc_motor = serial.Serial(port='/dev/ttyACM0', baudrate=9600, timeout=1)
+	time.sleep(1)
+	coinid_servo = CoinServoDriver()
+	#for i in range(0,5,1):
+	get_new_coin(coinid_servo, dc_motor)
+	time.sleep(1)
+	#coinid_servo.arm_up(100)
+	#time.sleep(.2)
+	#coinid_servo.arm_down()
+	dc_motor.close()
+	#cv.WaitKey()
+	#sys.exit(-1)	
+	"""
+
 #	if len(sys.argv) < 4:
 #		print "******* Requires 3 image files of the same size."
 #		print "This program will return the angle at which the second is in relation to the first. ***"
@@ -32,7 +105,7 @@ if __name__=="__main__":
 
 	try:
 		#img1 = cv.LoadImage(sys.argv[1],cv.CV_LOAD_IMAGE_GRAYSCALE)
-		frame = grab_frame(0)
+		frame = grab_frame(1)
 		img1 = cv.CreateImage(cv.GetSize(frame), cv.IPL_DEPTH_8U, 1)
 		#cv.WaitKey()
 		img1 = CVtoGray(frame)
@@ -88,8 +161,8 @@ if __name__=="__main__":
 
 	#c1  = compare_images_rotation(scaled_img_center_crop, coin2_center_crop)
 	#c1 = compare_images_canny(scaled_img_center_crop, coin2_center_crop)
-	c1 = compare_images_lbp(coin1_center_crop, coin2_center_crop)
-	#c1 = compare_images_laplace(scaled_img_center_crop, coin2_center_crop)
+	#c1 = compare_images_lbp(coin1_center_crop, coin2_center_crop)
+	c1 = compare_images_laplace(coin1_center_crop, coin2_center_crop)
 	#c1 = compare_images_brightness(coin1_center_crop, coin2_center_crop)
 	#c1 = compare_images_stddev(scaled_img_center_crop, coin2_center_crop)
 	#c1 = compare_images_var(scaled_img_center_crop, coin2_center_crop)
@@ -115,8 +188,8 @@ if __name__=="__main__":
 	#cv.WaitKey()
 	#c2  = compare_images_rotation(scaled_img_center_crop, coin3_center_crop)
 	#c2 = compare_images_canny(scaled_img_center_crop, coin3_center_crop)
-	c2 = compare_images_lbp(coin1_center_crop, coin3_center_crop)
-	#c2 = compare_images_laplace(scaled_img_center_crop, coin3_center_crop)
+	#c2 = compare_images_lbp(coin1_center_crop, coin3_center_crop)
+	c2 = compare_images_laplace(coin1_center_crop, coin3_center_crop)
 	#c2 = compare_images_brightness(coin1_center_crop, coin3_center_crop)
 	#c2 = compare_images_stddev(scaled_img_center_crop, coin3_center_crop)
 	#c2 = compare_images_var(scaled_img_center_crop, coin3_center_crop) 

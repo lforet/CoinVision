@@ -19,7 +19,6 @@ import mahotas
 from scipy.misc import imread, imshow
 
 
-
 def CVtoGray(img):
 	grey_image = cv.CreateImage(cv.GetSize(img), cv.IPL_DEPTH_8U, 1)
 	temp_img = cv.CloneImage(img)
@@ -885,18 +884,19 @@ def compare_images_canny_sum(img1, img2):
 #########################################################
 
 def compare_images_lbp(img1, img2):
-	x = 100
+	x = 80
 	img1 = equalize_brightness(img1, img2)
 	
 	img1_copy = cv.GetMat(img1)
 	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.EqualizeHist(img1_copy, img1_copy)
 	#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
-	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
 	cv.DestroyWindow("LBP Coin 1")
 	cv.ShowImage  ("LBP Coin 1", img1_copy )
 	cv.MoveWindow ('LBP Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
+	#cv.WaitKey()
 	img1_lbp = get_LBP_fingerprint(img1_copy, sections = 1)
 	img1_lbp = numpy.array(img1_lbp)
 	img1_lbp = img1_lbp.reshape(1, (img1_lbp.shape[0]*img1_lbp.shape[1]))
@@ -912,7 +912,7 @@ def compare_images_lbp(img1, img2):
 	#cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN,3, 3)
 	#cv.EqualizeHist(img2_copy, img2_copy)
 	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
-	#cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
 	cv.DestroyWindow("LBP Coin 2")
 	cv.ShowImage  ("LBP Coin 2", img2_copy )
@@ -956,22 +956,25 @@ def compare_images_laplace(img1, img2):
 	#sobel_img1_copy = cv.CreateImage(cv.GetSize(img1_copy), cv.IPL_DEPTH_16S,1)
 	#cv.Sobel(img1_copy, sobel_img1_copy, 1 , 1 )
 	#cv.ConvertScaleAbs(sobel_img1_copy, img1_copy, 1, 1)
-	best_sub = 9999999999
+	best_sub = 999999999999
 	#best_sub = 0
 	best_orientation = 0
 	print 'Starting to find best orientation'
 	for i in range(0, 360, 1):
 		img2_copy = cv.CloneImage(img2)
-		img2_copy = rotate_image(img2_copy, i)
-		#dst_16s2 = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S, 1)
-		#cv.Laplace(img2_copy, dst_16s2,3)
-		#cv.Convert(dst_16s2,img2_copy)
+		img2_copy = CVtoPIL(img2_copy)
+		img2_copy = img2_copy.rotate(i, expand=1)
+		img2_copy = PILtoCV(img2_copy)
+		#img2_copy = rotate_image(img2_copy, i)
+		dst_16s2 = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S, 1)
+		cv.Laplace(img2_copy, dst_16s2,3)
+		cv.Convert(dst_16s2,img2_copy)
 		#cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
 		#sobel_img2_copy = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S,1)
 		#cv.Sobel(img2_copy, sobel_img2_copy, 1 , 1 )
 		#cv.ConvertScaleAbs(sobel_img2_copy, img2_copy, 1, 1)
 		#the AND of two images has proven to be the most reliable 2/10/2012		
-		#cv.AbsDiff(img1_copy, img2_copy , subtracted_image)
+		cv.AbsDiff(img1_copy, img2_copy , subtracted_image)
 		#cv.And(img1_copy, img2_copy , subtracted_image)
 		#cv.Sub(img1_copy, img2_copy , subtracted_image)
 		#cv.Max(img1_copy, img2_copy , subtracted_image)
@@ -979,8 +982,8 @@ def compare_images_laplace(img1, img2):
 		cv.MoveWindow ("Image 2 being processed", (100 + 1*cv.GetSize(img2_copy)[0]), 100)
 		#cv.ShowImage("Subtracted_Image", subtracted_image)
 		#cv.MoveWindow ("Subtracted_Image", (100 + 1*cv.GetSize(img2_copy)[0]), (150 + cv.GetSize(img2_copy)[1]) )
-		#result = cv.Sum(subtracted_image)
-		result = compare_images_rms(img1_copy, img2_copy)	
+		result = cv.Sum(subtracted_image)
+		#result = rmsdiff(img1_copy, img2_copy)	
 		#print i, "result = ", result
 		if result < best_sub: 
 			best_sub = result
