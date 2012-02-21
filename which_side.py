@@ -77,7 +77,7 @@ def motor_stop(dc_motor):
 
 
 #######################   Globals
-sample_size = 50
+sample_size = 60
 
 
 if __name__=="__main__":
@@ -104,26 +104,24 @@ if __name__=="__main__":
 #		sys.exit(-1)
 
 	try:
-		#img1 = cv.LoadImage(sys.argv[1],cv.CV_LOAD_IMAGE_GRAYSCALE)
-		frame = grab_frame(1)
-		img1 = cv.CreateImage(cv.GetSize(frame), cv.IPL_DEPTH_8U, 1)
-		#cv.WaitKey()
-		img1 = CVtoGray(frame)
+		img1 = cv.LoadImage(sys.argv[1],cv.CV_LOAD_IMAGE_GRAYSCALE)
+		#frame = grab_frame(1)
+		#img1 = cv.CreateImage(cv.GetSize(frame), cv.IPL_DEPTH_8U, 1)
+		#img1 = CVtoGray(frame)
+
 		#img1 = CV_enhance_edge(img1)
 		#cv.WaitKey()
-		img2 = cv.LoadImage(sys.argv[1],cv.CV_LOAD_IMAGE_GRAYSCALE)
-		img3 = cv.LoadImage(sys.argv[2],cv.CV_LOAD_IMAGE_GRAYSCALE)
+		img2 = cv.LoadImage(sys.argv[2],cv.CV_LOAD_IMAGE_GRAYSCALE)
+		img3 = cv.LoadImage(sys.argv[3],cv.CV_LOAD_IMAGE_GRAYSCALE)
 	except:
 		print "******* Could not open image files *******"
 		sys.exit(-1)
+
 
 	#print img1, img2, img3
 	#print cv_img_distance(img1, img2, 'euclidean')[0]
 	#cv.WaitKey()
 	#sys.exit(-1)
-	
-	#img1_copy = cv.CloneImage(img1)
-	#img2_copy = cv.CloneImage(img2)
 
 	cv.ShowImage("Coin 1", img1)
 	cv.MoveWindow ('Coin 1',50 ,50 )
@@ -161,11 +159,12 @@ if __name__=="__main__":
 
 	#c1  = compare_images_rotation(scaled_img_center_crop, coin2_center_crop)
 	#c1 = compare_images_canny(scaled_img_center_crop, coin2_center_crop)
-	#c1 = compare_images_lbp(coin1_center_crop, coin2_center_crop)
-	c1 = compare_images_laplace(coin1_center_crop, coin2_center_crop)
+	c1 = compare_images_lbp(coin1_center_crop, coin2_center_crop)
+	#c1 = compare_images_laplace(coin1_center_crop, coin2_center_crop)
 	#c1 = compare_images_brightness(coin1_center_crop, coin2_center_crop)
 	#c1 = compare_images_stddev(scaled_img_center_crop, coin2_center_crop)
 	#c1 = compare_images_var(scaled_img_center_crop, coin2_center_crop)
+	#c1 = compare_images_hu(coin1_center_crop, coin2_center_crop, sample_size)
 	print "comarison coin1-> coin2:", c1
 
 
@@ -188,11 +187,12 @@ if __name__=="__main__":
 	#cv.WaitKey()
 	#c2  = compare_images_rotation(scaled_img_center_crop, coin3_center_crop)
 	#c2 = compare_images_canny(scaled_img_center_crop, coin3_center_crop)
-	#c2 = compare_images_lbp(coin1_center_crop, coin3_center_crop)
-	c2 = compare_images_laplace(coin1_center_crop, coin3_center_crop)
+	c2 = compare_images_lbp(coin1_center_crop, coin3_center_crop)
+	#c2 = compare_images_laplace(coin1_center_crop, coin3_center_crop)
 	#c2 = compare_images_brightness(coin1_center_crop, coin3_center_crop)
 	#c2 = compare_images_stddev(scaled_img_center_crop, coin3_center_crop)
 	#c2 = compare_images_var(scaled_img_center_crop, coin3_center_crop) 
+	#c2 = compare_images_hu(coin1_center_crop, coin3_center_crop, sample_size)
 	print "comarison coin1-> coin3:", c2
 	print
 
@@ -256,7 +256,7 @@ if __name__=="__main__":
 	cv.ShowImage("Crop Center of correct_side_coin_center_crop", correct_side_coin_center_crop)
 	cv.MoveWindow ('Crop Center of correct_side_coin_center_crop', 100, (125 + (cv.GetSize(correct_side_coin_center_crop)[0])) )
 	#cv.WaitKey()
-	degrees = get_orientation_sobel( correct_side_coin_center_crop, scaled_img_center_crop)
+	degrees = get_orientation_sobel( correct_side_coin_center_crop, scaled_img_center_crop, sample_size)
 	print "sobel degrees:", degrees
 	img1_copy = rotate_image(img1, degrees)
 	cv.ShowImage("Coin 1 Oriented", img1_copy)

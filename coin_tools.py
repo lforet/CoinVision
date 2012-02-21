@@ -57,7 +57,7 @@ def equalize_brightness(img1, img2):
 	im_stat2 = ImageStat.Stat(img2_copy)
 	img2_copy_mean = im_stat2.mean
 	print "img1_copy_mean:",img1_copy_mean,"  img2_copy_mean:", img2_copy_mean
-	mean_ratio = img1_copy_mean[0] / img2_copy_mean[0]
+	mean_ratio = 1 / (img1_copy_mean[0] / img2_copy_mean[0])
 	print "mean_ratio:", mean_ratio 
 	#cv.WaitKey()
 	enh = ImageEnhance.Brightness(img1_copy) 
@@ -337,49 +337,6 @@ def digitlist(value, numdigits=8, base=2):
 	return digits
 
 ###########################################################
-def cv2array(im):
-  depth2dtype = {
-        cv.IPL_DEPTH_8U: 'uint8',
-        cv.IPL_DEPTH_8S: 'int8',
-        cv.IPL_DEPTH_16U: 'uint16',
-        cv.IPL_DEPTH_16S: 'int16',
-        cv.IPL_DEPTH_32S: 'int32',
-        cv.IPL_DEPTH_32F: 'float32',
-        cv.IPL_DEPTH_64F: 'float64',
-    }
-
-  arrdtype=im.depth
-  a = np.fromstring(
-         im.tostring(),
-         dtype=depth2dtype[im.depth],
-         count=im.width*im.height*im.nChannels)
-  a.shape = (im.height,im.width,im.nChannels)
-  return a
-
-###########################################################
-
-def array2cv(a):
-  dtype2depth = {
-        'uint8':   cv.IPL_DEPTH_8U,
-        'int8':    cv.IPL_DEPTH_8S,
-        'uint16':  cv.IPL_DEPTH_16U,
-        'int16':   cv.IPL_DEPTH_16S,
-        'int32':   cv.IPL_DEPTH_32S,
-        'float32': cv.IPL_DEPTH_32F,
-        'float64': cv.IPL_DEPTH_64F,
-    }
-  try:
-    nChannels = a.shape[2]
-  except:
-    nChannels = 1
-  cv_im = cv.CreateImageHeader((a.shape[1],a.shape[0]),
-          dtype2depth[str(a.dtype)],
-          nChannels)
-  cv.SetData(cv_im, a.tostring(),
-             a.dtype.itemsize*nChannels*a.shape[1])
-  return cv_im
-
-###########################################################
 
 def cv_img_distance(img1, img2, dist_type):
 
@@ -644,47 +601,66 @@ def correct_scale(img1, img2, coin1_center, coin2_center):
 
 ###########################################################
 
-def get_orientation_sobel(img1, img2): 
-	# rotate img2 the degrees returned by this function to make image match
-	subtracted_image = cv.CreateImage(cv.GetSize(img1), 8, 1)
+def get_orientation_sobel(img1, img2, sample_size):
+	# rotate img1 the degrees returned by this function to match img2
+	x = 80 #canny param
+	sample_size = sample_size - 15
+	# make copies
 	img1_copy = cv.CloneImage(img1)
-	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)	
-	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
-	sobel_img1_copy = cv.CreateImage(cv.GetSize(img1_copy), cv.IPL_DEPTH_16S,1)
-	cv.Sobel(img1_copy, sobel_img1_copy, 1 , 1 )
-	cv.ConvertScaleAbs(sobel_img1_copy, img1_copy, 1, 1)
+	img2_copy = cv.CloneImage(img2)
+
+	#normalize brightness
+	#make 1st image as bright as 2nd
+	img1  = equalize_brightness(img1_copy , img2_copy )
+
+	#perform filters
+	#cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN,3, 3)
+	#cv.EqualizeHist(img2_copy, img2_copy)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
+	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
+	sobel_img2_copy = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S,1)
+	cv.Sobel(img2_copy, sobel_img2_copy, 1 , 1 )
+	cv.ConvertScaleAbs(sobel_img2_copy, img2_copy, 1, 1)
+	center = ([(img2_copy.width/2),(img2_copy.height/2)], sample_size)
+	img2_copy =  center_crop(img2_copy, center, sample_size)
+	subtracted_image = cv.CreateImage(cv.GetSize(img2_copy), 8, 1)
+	cv.DestroyWindow("Orient Coin 2")
+	cv.ShowImage  ("Orient Coin 2", img2_copy )
+	cv.MoveWindow ('Orient Coin 2', (101 + (1 * (cv.GetSize(img2)[0]))) , (125 + (cv.GetSize(img2)[0])) )
+	cv.WaitKey(5)
 	best_sub = 9999999999
 	#best_sub = 0
 	best_orientation = 0
 	print 'Starting to find best orientation'
 	for i in range(0, 360, 1):
-		img2_copy = cv.CloneImage(img2)
-		img2_copy = rotate_image(img2_copy, i)
-		cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
-		sobel_img2_copy = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S,1)
-		cv.Sobel(img2_copy, sobel_img2_copy, 1 , 1 )
-		cv.ConvertScaleAbs(sobel_img2_copy, img2_copy, 1, 1)
+		img1_copy = rotate_image(img1, i)
+		cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+		img1_copy =  center_crop(img1_copy, center, sample_size)
+		#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+		sobel_img1_copy = cv.CreateImage(cv.GetSize(img1_copy), cv.IPL_DEPTH_16S,1)
+		cv.Sobel(img1_copy, sobel_img1_copy, 1 , 1 )
+		cv.ConvertScaleAbs(sobel_img1_copy, img1_copy, 1, 1)
 		#the AND of two images has proven to be the most reliable 2/10/2012		
 		cv.AbsDiff(img1_copy, img2_copy , subtracted_image)
 		#cv.And(img1_copy, img2_copy , subtracted_image)
 		#cv.Sub(img1_copy, img2_copy , subtracted_image)
 		#cv.Max(img1_copy, img2_copy , subtracted_image)
-		cv.ShowImage("Image 2 being processed", img2_copy )
-		cv.MoveWindow ("Image 2 being processed", (100 + 1*cv.GetSize(img2_copy)[0]), 100)
+		cv.ShowImage("Image 1 processed", img1_copy )
+		cv.MoveWindow ("Image 1 processed", (100 + 2*cv.GetSize(img1_copy)[0]), 100)
 		cv.ShowImage("Subtracted_Image", subtracted_image)
-		cv.MoveWindow ("Subtracted_Image", (100 + 1*cv.GetSize(img2_copy)[0]), (150 + cv.GetSize(img2_copy)[1]) )
+		cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1_copy)[0]), (150 + cv.GetSize(img1_copy)[1]) )
 		result = cv.Sum(subtracted_image)	
 		#print i, "result = ", result
 		if result[0] < best_sub: 
 			best_sub = result[0]
 			best_orientation = i
-			#print i, "result = ", result[0], "  best_orientation =", best_orientation
+			#print i, "result = ", result[0]
 		key = cv.WaitKey(5)
 		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
 			break 
 		#time.sleep(.01)
 	print 'Finished finding best orientation'
-	return (best_orientation)
+	return (360-best_orientation)
 	#return(best_sub)
 
 
@@ -900,12 +876,7 @@ def compare_images_lbp(img1, img2):
 	img1_lbp = get_LBP_fingerprint(img1_copy, sections = 1)
 	img1_lbp = numpy.array(img1_lbp)
 	img1_lbp = img1_lbp.reshape(1, (img1_lbp.shape[0]*img1_lbp.shape[1]))
-	#print "dim:", img1_lbp.ndim
-	#print img1_lbp 	
-	#print "dim:", img1_lbp.ndim
-	#print img1_lbp 
-	#print "lbp1 len)", 
-	#hu1 =  np.array(cv.GetHuMoments(cv.Moments(img1_copy)))
+	print "img1_lbp:", img1_lbp 
 	cv.WaitKey(10)
 
 	img2_copy = cv.GetMat(img2)
@@ -920,24 +891,9 @@ def compare_images_lbp(img1, img2):
 	img2_lbp = get_LBP_fingerprint(img2_copy, sections = 1)
 	img2_lbp = numpy.array(img2_lbp)
 	img2_lbp = img2_lbp.reshape(1, (img2_lbp.shape[0]*img2_lbp.shape[1]))
+	print "img2_lbp:", img2_lbp
 	cv.WaitKey(10)
-	#time.sleep(.5)
-	#print "(img2_lbp)=", (img2_lbp)
-	#hu2 =  np.array(cv.GetHuMoments(cv.Moments(img2_copy)))
-	#print "len(img2_lbp)", len(img2_lbp)
 	distance = scipy.spatial.distance.cdist(img1_lbp, img2_lbp, 'euclidean')
-	#distance = rms_dist(img1_lbp, img2_lbp)
-	#diff = (img1_lbp - img2_lbp)
-	
-	#print "hu1=", hu1, "  hu2:", hu2
-	#supposed to be histogram below
-	#diff = (hu1 - hu2)
-	#distance = numpy.sqrt(numpy.dot(diff, diff))
-	
-	#print "diff=", diff
-	#print "distance=:",  distance
-	#cv.DestroyWindow("LBP Coin 1")
-	#cv.DestroyWindow("LBP Coin 1")
 	cv.WaitKey()
 	return (distance)
 
@@ -1183,6 +1139,68 @@ def compare_images_MatchTemp(img1, img2, sample_size):
 	cv.WaitKey()
 	sys.exit(-1)
 
+##############################################################
+def compare_images_hu(img1, img2, sample_size):
+	x = 80 #canny param
+	sample_size = sample_size - 15
+	# make copies
+	img1_copy = cv.CloneImage(img1)
+	img2_copy = cv.CloneImage(img2)
 
+	#normalize brightness
+	#make 1st image as bright as 2nd
+	img1  = equalize_brightness(img1_copy , img2_copy )
+
+	#perform filters
+	#cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN,3, 3)
+	#cv.EqualizeHist(img2_copy, img2_copy)
+	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
+	#cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
+	center = ([(img2_copy.width/2),(img2_copy.height/2)], sample_size)
+	img2_copy =  center_crop(img2_copy, center, sample_size)
+
+	cv.DestroyWindow("HU Coin 2")
+	cv.ShowImage  ("HU Coin 2", img2_copy )
+	cv.MoveWindow ('HU Coin 2', (101 + (1 * (cv.GetSize(img2)[0]))) , (125 + (cv.GetSize(img2)[0])) )
+	#get hu moments
+	img2_hu =  np.array(cv.GetHuMoments(cv.Moments(cv.GetMat(img2_copy))))	
+	#reshape array to perform distance cals
+	img2_hu = img2_hu.reshape(1, (img2_hu.shape[0]))
+	cv.WaitKey(5)
+
+	best_sub = 9999999999
+	#best_sub = 0
+	print 'Starting Hu Comparison'
+	for i in range(0, 360, 1):
+		img1_copy = rotate_image(img1, i)
+		img1_copy =  center_crop(img1_copy, center, sample_size)
+		#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+		#cv.EqualizeHist(img1_copy, img1_copy)
+		#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+		cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+		#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+		#cv.DestroyWindow("HU Coin 1")
+		cv.ShowImage  ("HU Coin 1", img1_copy )
+		cv.MoveWindow ('HU Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
+		cv.WaitKey(5)
+		img1_hu =  np.array(cv.GetHuMoments(cv.Moments(cv.GetMat(img1_copy))))	
+		img1_hu = img1_hu.reshape(1, (img1_hu.shape[0]))
+		result = cv_img_distance(img1_copy, img2_copy, 'euclidean')[0]	
+		if result< best_sub: 
+			best_sub = result
+			print i, "result = ", result
+		key = cv.WaitKey(5)
+		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
+			break 
+		#time.sleep(.01)
+	return(best_sub)
+	cv.WaitKey()
+	return (distance)
+##############################################################
+
+
+def compare_images_orientation(img1, img2, sample_size):
+		imgget_orientation_sobel(img1, img2, sample_size)
 
 
