@@ -158,7 +158,7 @@ if __name__=="__main__":
 	cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin2_center_crop)[0])) )
 
 	#c1  = compare_images_rotation(scaled_img_center_crop, coin2_center_crop)
-	#c1 = compare_images_canny(scaled_img_center_crop, coin2_center_crop)
+	#c1 = compare_images_canny(coin1_center_crop, coin2_center_crop, sample_size)
 	c1 = compare_images_lbp(coin1_center_crop, coin2_center_crop)
 	#c1 = compare_images_laplace(coin1_center_crop, coin2_center_crop)
 	#c1 = compare_images_brightness(coin1_center_crop, coin2_center_crop)
@@ -186,7 +186,7 @@ if __name__=="__main__":
 
 	#cv.WaitKey()
 	#c2  = compare_images_rotation(scaled_img_center_crop, coin3_center_crop)
-	#c2 = compare_images_canny(scaled_img_center_crop, coin3_center_crop)
+	#c2 = compare_images_canny(coin1_center_crop, coin3_center_crop, sample_size)
 	c2 = compare_images_lbp(coin1_center_crop, coin3_center_crop)
 	#c2 = compare_images_laplace(coin1_center_crop, coin3_center_crop)
 	#c2 = compare_images_brightness(coin1_center_crop, coin3_center_crop)
@@ -199,11 +199,13 @@ if __name__=="__main__":
 	if c1 < c2: 
 	#if c1 > c2:
 		found_coin2 = found_coin2 + 1
-		print "coin 1 is more like coin2", found_coin2, "   ", found_coin3
+		print ; print "------------------------------------------"
+		print "coin 1 is more like Coin2", found_coin2, "   ", found_coin3
 
 	else:
 		found_coin3 = found_coin3 + 1
-		print "coin 1 is more like coin3", found_coin3, "   ", found_coin2
+		print ; print "------------------------------------------"
+		print "Coin 1 is more like Coin3", found_coin3, "   ", found_coin2
 	dif = math.fabs(c1-c2)
 	print "Dif = ", dif
 	if dif > best_dif: 

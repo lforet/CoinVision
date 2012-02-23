@@ -19,6 +19,11 @@ import mahotas
 from scipy.misc import imread, imshow
 
 
+visual = True
+
+
+
+
 def CVtoGray(img):
 	grey_image = cv.CreateImage(cv.GetSize(img), cv.IPL_DEPTH_8U, 1)
 	temp_img = cv.CloneImage(img)
@@ -44,7 +49,7 @@ def CV_enhance_edge(img):
 ###########################################################
 
 def equalize_brightness(img1, img2): 
-	#equalizes brightness of image to per image two. returns image #1 with brightness adjusted
+	#equalizes brightness of image to per image two. returns image #1 with brightness adjusted 
 	img1_copy = cv.CloneImage(img1)
 	img2_copy = cv.CloneImage(img2)
 
@@ -56,10 +61,15 @@ def equalize_brightness(img1, img2):
 	img1_copy_mean = im_stat1.mean
 	im_stat2 = ImageStat.Stat(img2_copy)
 	img2_copy_mean = im_stat2.mean
-	print "img1_copy_mean:",img1_copy_mean,"  img2_copy_mean:", img2_copy_mean
+	
 	mean_ratio = 1 / (img1_copy_mean[0] / img2_copy_mean[0])
-	print "mean_ratio:", mean_ratio 
-	#cv.WaitKey()
+	
+	if visual == True: 
+			print "Normalizing Brightness of images..."
+			print "img1_copy_mean:",img1_copy_mean,"  img2_copy_mean:", img2_copy_mean
+			print "Adjusting img1 Brightness:", mean_ratio 
+			print "Press any key to continue....."
+			cv.WaitKey()
 	enh = ImageEnhance.Brightness(img1_copy) 
 	img1_copy = enh.enhance(mean_ratio)
 
@@ -269,9 +279,12 @@ def center_crop(img, center, crop_size):
 	center_crop = cv.GetSubRect(img, (center_crop_topleft[0], center_crop_topleft[1] , (center_crop_bottomright[0] - center_crop_topleft[0]), (center_crop_bottomright[1] - center_crop_topleft[1])  ))
 	center_crop_img = cv.CloneMat(center_crop)
 	center_crop_img = cv.GetImage(center_crop_img)
-	#print "center_crop_img:", center_crop_img 
-	#cv.ShowImage("Crop Center of Coin", center_crop)
-	#cv.WaitKey()
+	#if visual == True:
+	#	print "center_crop_img:", center_crop_img 
+	#	cv.ShowImage("Crop Center of Coin", center_crop)
+	#	print "Press any key to continue....."	
+	#	cv.WaitKey()
+	#	cv.DestroyWindow("Crop Center of Coin")
 	return center_crop_img
 
 ###########################################################
@@ -281,9 +294,14 @@ def resize_img(original_img, scale_percentage):
 	#resized_img = cv.CreateMat(original_img.rows * scale_percentage , original.cols * scale_percenta, cv.CV_8UC3)
 	resized_img = cv.CreateImage((cv.Round(original_img.width * scale_percentage) , cv.Round(original_img.height * scale_percentage)), original_img.depth, original_img.nChannels)
 	cv.Resize(original_img, resized_img)
-	#cv.ShowImage("original_img", original_img)
-	#cv.ShowImage("resized_img", resized_img)
-	#cv.WaitKey()
+	if visual == True:
+		print "resizing image..."
+		cv.ShowImage("original_img", original_img)
+		cv.ShowImage("resized_img", resized_img)
+		print "Press any key to continue....."
+		cv.WaitKey()
+		cv.DestroyWindow("original_img")
+		cv.DestroyWindow("resized_img")
 	return(resized_img)
 	
 ###########################################################
@@ -533,14 +551,20 @@ def find_center_of_coin(img):
 					center = int(np.asarray(storage)[i][0][0]), int(np.asarray(storage)[i][0][1])
 					radius = int(np.asarray(storage)[i][0][2])
 					#print center, radius
-					#cv.Circle(img_copy, center, radius, cv.CV_RGB(255, 0, 0), 1, cv.CV_AA, 0 )
-					#cv.Circle(img_copy, center, 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
-					#cv.ShowImage("Center of Coin", img_copy)
-					#cv.MoveWindow ('Center of Coin', 50 , (50 + (1 * (cv.GetSize(img_copy)[0]))))
+					if visual == True:
+						time.sleep(.05)
+						cv.Circle(img_copy, center, radius, cv.CV_RGB(255, 0, 0), 1, cv.CV_AA, 0 )
+						cv.Circle(img_copy, center, 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
+						cv.ShowImage("Center of Coin", img_copy)
+						cv.MoveWindow ('Center of Coin', 50 , (50 + (1 * (cv.GetSize(img_copy)[0]))))
 					if (radius > best_circle[1]) & (radius > 150) & (radius < img.height/1.5):
 						best_circle = (center, radius)
-						#print "Found Best Circle---Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], " minRadius: ", minRadius, " maxRadius: ", maxRadius
-	#print "done with cirlce"
+						if visual == True:
+							print "Found Best Circle---Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], " minRadius: ", minRadius, " maxRadius: ", maxRadius
+	if visual == True:
+		print "Finding centers completed..Press any key"
+		cv.WaitKey()
+		cv.DestroyWindow("Center of Coin")
 	return best_circle
 
 ###########################################################
@@ -568,10 +592,11 @@ def get_LBP_fingerprint(img_cv, sections = 8):
 			#cropped_img1 = img.crop(box)
 			cropped_img1 = cv.GetSubRect(img_cv, box)
 			cv.ShowImage("Fingerprint", cropped_img1 )
+			cv.MoveWindow("Fingerprint", (101 + (2 * (cv.GetSize(cropped_img1)[0]))) , 100)
 			#print "crop size", cv.GetSize(cropped_img1)
 			cropped_img1 = cv.CloneMat(cropped_img1)
 			cropped_img1 = cv.GetImage(cropped_img1)
-			cv.WaitKey(5)
+			cv.WaitKey()
 			pixels = cv2array(cropped_img1)
 			#pixels_avg = scipy.mean(pixels,2)
 			lbp1 = mahotas.features.lbp(pixels , 1, 8, ignore_zeros=False)
@@ -582,10 +607,14 @@ def get_LBP_fingerprint(img_cv, sections = 8):
 			#print "fingerprint=", fingerprint
 			#fingerprint.extend([lbp1])
 	#fingerprint = np.array(fingerprint)
-	#print "fingerprint.ndim, fingerprint.size=", fingerprint.ndim, fingerprint.size
-	#print 'THE ENTIRE FINGERPRINT = ', fingerprint
-	#cv.WaitKey()
+
 	fingerprint = np.array(fingerprint)
+	if visual == True:
+		print "fingerprint.ndim, fingerprint.size=", fingerprint.ndim, fingerprint.size
+		print 'THE ENTIRE FINGERPRINT = ', fingerprint	
+		print "Press any key to contiue.."
+		cv.WaitKey()
+	cv.DestroyWindow("Fingerprint")
 	#fingerprint = fingerprint.ravel()
 	return fingerprint
 
@@ -602,8 +631,9 @@ def correct_scale(img1, img2, coin1_center, coin2_center):
 ###########################################################
 
 def get_orientation_sobel(img1, img2, sample_size):
+	print "Get Orientation Sobel"
 	# rotate img1 the degrees returned by this function to match img2
-	x = 80 #canny param
+	x = 120 #canny param
 	sample_size = sample_size - 15
 	# make copies
 	img1_copy = cv.CloneImage(img1)
@@ -615,6 +645,7 @@ def get_orientation_sobel(img1, img2, sample_size):
 
 	#perform filters
 	#cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN,3, 3)
+	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
 	#cv.EqualizeHist(img2_copy, img2_copy)
 	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
@@ -634,9 +665,11 @@ def get_orientation_sobel(img1, img2, sample_size):
 	print 'Starting to find best orientation'
 	for i in range(0, 360, 1):
 		img1_copy = rotate_image(img1, i)
+		#cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN,3, 3)
+		#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
 		cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
-		img1_copy =  center_crop(img1_copy, center, sample_size)
 		#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+		img1_copy =  center_crop(img1_copy, center, sample_size)
 		sobel_img1_copy = cv.CreateImage(cv.GetSize(img1_copy), cv.IPL_DEPTH_16S,1)
 		cv.Sobel(img1_copy, sobel_img1_copy, 1 , 1 )
 		cv.ConvertScaleAbs(sobel_img1_copy, img1_copy, 1, 1)
@@ -770,60 +803,69 @@ def compare_images_rotation(img1, img2):
 
 ###########################################################
 
-def compare_images_canny(img1, img2):
-	#x=190 
-	subtracted_image = cv.CreateImage(cv.GetSize(img1), 8, 1)
-	temp_img = cv.CreateImage(cv.GetSize(img1), 8, 1)	
-	best_sub = 999999999
+def compare_images_canny(img1, img2, sample_size):
+		
+	x = 120 #canny param
+	sample_size = sample_size - 15
+	# make copies
+	img1_copy = cv.CloneImage(img1)
+	img2_copy = cv.CloneImage(img2)
+
+	#normalize brightness
+	#make 1st image as bright as 2nd
+	img1  = equalize_brightness(img1_copy , img2_copy )
+
+	#perform filters
+	#cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN,3, 3)
+	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
+	#cv.EqualizeHist(img2_copy, img2_copy)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
+	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
+	sobel_img2_copy = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S,1)
+	cv.Sobel(img2_copy, sobel_img2_copy, 1 , 1 )
+	cv.ConvertScaleAbs(sobel_img2_copy, img2_copy, 1, 1)
+	center = ([(img2_copy.width/2),(img2_copy.height/2)], sample_size)
+	img2_copy =  center_crop(img2_copy, center, sample_size)
+	subtracted_image = cv.CreateImage(cv.GetSize(img2_copy), 8, 1)
+	cv.DestroyWindow("Canny Coin 2")
+	cv.ShowImage  ("Canny Coin 2", img2_copy )
+	cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(img2)[0]))) , (125 + (cv.GetSize(img2)[0])) )
+	cv.WaitKey(5)
+	best_sub = 9999999999
 	#best_sub = 0
 	best_orientation = 0
 	print 'Starting to find best orientation'
-	best_canny  = 0
-	#best_dif = 9999999
-	#for x in range(20, 200, 10):
-	x = 180
-	img1_copy = cv.CloneImage(img1)
-	#cv.Smooth(img1_copy , img1_copy, cv.CV_MEDIAN,3, 3)
-	#cv.EqualizeHist(img1_copy, img1_copy)
-	#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
-	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
-	cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
-	cv.ShowImage  ("Canny Coin 1", img1_copy )
-	cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
-	for i in range(1, 360):
-		img2_copy = cv.CloneImage(img2)
-		img2_copy = rotate_image(img2_copy, i)
-		#cv.Smooth(img2_copy , img2_copy, cv.CV_MEDIAN,3, 3)
-		#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
-		#cv.EqualizeHist(img2_copy, img2_copy)
-		cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
-		cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
+	for i in range(0, 360, 1):
+		img1_copy = rotate_image(img1, i)
+		cv.Smooth(img1_copy , img1_copy, cv.CV_MEDIAN,3, 3)
+		#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+		cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
+		#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+		img1_copy =  center_crop(img1_copy, center, sample_size)
+		sobel_img1_copy = cv.CreateImage(cv.GetSize(img1_copy), cv.IPL_DEPTH_16S,1)
+		cv.Sobel(img1_copy, sobel_img1_copy, 1 , 1 )
+		cv.ConvertScaleAbs(sobel_img1_copy, img1_copy, 1, 1)
+		#the AND of two images has proven to be the most reliable 2/10/2012		
 		#cv.AbsDiff(img1_copy, img2_copy , subtracted_image)
-		cv.Sub(img1_copy, img2_copy , subtracted_image)
-		#cv.And(img1_copy, img2_copy , subtracted_image)
-		#cv.Xor(img1_copy, img2_copy , subtracted_image)
-		cv.ShowImage  ("Canny Coin 2", img2_copy )
-		cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(img1)[0]))) , (125 + (cv.GetSize(img1)[0])) )
+		cv.And(img1_copy, img2_copy , subtracted_image)
+		#cv.Sub(img1_copy, img2_copy , subtracted_image)
+		#cv.Max(img1_copy, img2_copy , subtracted_image)
+		cv.ShowImage("Canny 1 processed", img1_copy )
+		cv.MoveWindow ("Canny 1 processed", (100 + 2*cv.GetSize(img1_copy)[0]), 100)
 		cv.ShowImage("Subtracted_Image", subtracted_image)
-		cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1)[0]), (125 + cv.GetSize(img1)[1]) )
+		cv.MoveWindow ("Subtracted_Image", (100 + 2*cv.GetSize(img1_copy)[0]), (150 + cv.GetSize(img1_copy)[1]) )
 		result = cv.Sum(subtracted_image)	
-		#result = cv_img_distance(img1_copy, img2_copy, 'euclidean')[0]
 		#print i, "result = ", result
-		if result[0] < best_sub: 
+		if result[0] > best_sub: 
 			best_sub = result[0]
 			best_orientation = i
-			#print i, "result = ", result[0], "  best_orientation =", best_orientation
-			#dif = math.fabs(265-best_orientation)
-			#if dif < best_dif: 
-			#	best_dif = dif
-			#	best_canny = x
+			#print i, "result = ", result[0]
 		key = cv.WaitKey(5)
 		if key == 27 or key == ord('q') or key == 1048688 or key == 1048603:
 			break 
 		#time.sleep(.01)
-	#print x, "   best canny: ", best_canny, "  best dif= ", best_dif
-	#print 'Finished finding best orientation:', best_orientation
-	#return (best_orientation)
+	#print 'Finished finding best orientation'
+	#return (360-best_orientation)
 	return(best_sub)
 
 
@@ -838,7 +880,7 @@ def compare_images_canny_sum(img1, img2):
 	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
 	cv.ShowImage  ("Canny Coin 1", img1_copy )
-	cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
+	cv.MoveWindow ('Canny Coin 1', (101 + (1 * (cv.GetSize(img1_copy)[0]))) , 100)
 	img1_sum = cv.Sum(img1_copy)
 	print (img1_sum)
 
@@ -849,7 +891,7 @@ def compare_images_canny_sum(img1, img2):
 	#cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
 	cv.ShowImage  ("Canny Coin 2", img2_copy )
-	cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(img2)[0]))) , (125 + (cv.GetSize(img2)[0])) )
+	cv.MoveWindow ('Canny Coin 2', (101 + (1 * (cv.GetSize(img2_copy)[0]))) , (125 + (cv.GetSize(img2_copy)[0])) )
 	img2_sum = cv.Sum(img2_copy)
 	print (img2_sum)
 
@@ -860,19 +902,23 @@ def compare_images_canny_sum(img1, img2):
 #########################################################
 
 def compare_images_lbp(img1, img2):
-	x = 80
+	x = 180
 	img1 = equalize_brightness(img1, img2)
 	
 	img1_copy = cv.GetMat(img1)
 	#cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.EqualizeHist(img1_copy, img1_copy)
 	#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+	
 	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
-	#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+	cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
 	cv.DestroyWindow("LBP Coin 1")
 	cv.ShowImage  ("LBP Coin 1", img1_copy )
-	cv.MoveWindow ('LBP Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
-	#cv.WaitKey()
+	cv.MoveWindow ('LBP Coin 1', (101 + (1 * (cv.GetSize(img1_copy)[0]))) , 100)
+	if visual == True:
+		print "Smoothed and Canny Filter img1..."
+		print "Press any key to continue..."
+		cv.WaitKey()
 	img1_lbp = get_LBP_fingerprint(img1_copy, sections = 1)
 	img1_lbp = numpy.array(img1_lbp)
 	img1_lbp = img1_lbp.reshape(1, (img1_lbp.shape[0]*img1_lbp.shape[1]))
@@ -884,17 +930,25 @@ def compare_images_lbp(img1, img2):
 	#cv.EqualizeHist(img2_copy, img2_copy)
 	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
 	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
-	#cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
+	cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
 	cv.DestroyWindow("LBP Coin 2")
 	cv.ShowImage  ("LBP Coin 2", img2_copy )
-	cv.MoveWindow ('LBP Coin 2', (101 + (1 * (cv.GetSize(img2)[0]))) , (125 + (cv.GetSize(img2)[0])) )
+	cv.MoveWindow ('LBP Coin 2', (101 + (1 * (cv.GetSize(img2_copy)[0]))) , (125 + (cv.GetSize(img2_copy)[0])) )
+	if visual == True:
+		print "Smoothed and Canny Filter img2..."
+		print "Press any key to continue..."
+		cv.WaitKey()
 	img2_lbp = get_LBP_fingerprint(img2_copy, sections = 1)
 	img2_lbp = numpy.array(img2_lbp)
 	img2_lbp = img2_lbp.reshape(1, (img2_lbp.shape[0]*img2_lbp.shape[1]))
 	print "img2_lbp:", img2_lbp
 	cv.WaitKey(10)
 	distance = scipy.spatial.distance.cdist(img1_lbp, img2_lbp, 'euclidean')
-	cv.WaitKey()
+	if visual == True:
+		print "Completed LPB comparison.."
+		print "Euclidian distance: ", distance
+		print "Press any key to continue..."
+		cv.WaitKey()
 	return (distance)
 
 
@@ -1141,7 +1195,7 @@ def compare_images_MatchTemp(img1, img2, sample_size):
 
 ##############################################################
 def compare_images_hu(img1, img2, sample_size):
-	x = 80 #canny param
+	x = 120 #canny param
 	sample_size = sample_size - 15
 	# make copies
 	img1_copy = cv.CloneImage(img1)
@@ -1156,7 +1210,7 @@ def compare_images_hu(img1, img2, sample_size):
 	#cv.EqualizeHist(img2_copy, img2_copy)
 	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
 	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
-	#cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
+	cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
 	center = ([(img2_copy.width/2),(img2_copy.height/2)], sample_size)
 	img2_copy =  center_crop(img2_copy, center, sample_size)
 
@@ -1179,7 +1233,7 @@ def compare_images_hu(img1, img2, sample_size):
 		#cv.EqualizeHist(img1_copy, img1_copy)
 		#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
 		cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3, 3)
-		#cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+		cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
 		#cv.DestroyWindow("HU Coin 1")
 		cv.ShowImage  ("HU Coin 1", img1_copy )
 		cv.MoveWindow ('HU Coin 1', (101 + (1 * (cv.GetSize(img1)[0]))) , 100)
