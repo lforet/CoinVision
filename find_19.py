@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+hu#!/usr/bin/env python
 
 #This program will find and return the center of a coin image. It assumes only one coin per image
 
