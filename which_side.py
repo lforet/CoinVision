@@ -28,11 +28,11 @@ def get_new_coin(servo, dc_motor):
 		#time.sleep(.05)
 		cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 320)
 		cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 240)
-		for i in range(0, 16, 1):
+		for i in range(0, 25, 1):
 			base_frame = cv.QueryFrame(capture)
 			cv.ShowImage('Camera', base_frame)
 			cv.WaitKey(5)
-			#time.sleep(.01)
+			time.sleep(.01)
 		base_sum = cv.Sum(base_frame)
 		base_mean = ((base_sum[0] + base_sum[1] + base_sum[2])/ ((3*base_frame.height) * (3*base_frame.width)))
 		print "base_mean:", base_mean
@@ -41,7 +41,7 @@ def get_new_coin(servo, dc_motor):
 		print 'Connected to: ', dc_motor.portstr
 	
 		while not new_coin:
-			for i in range(0, 10, 1):
+			for i in range(0, 18, 1):
 				frame = cv.QueryFrame(capture)
 				cv.ShowImage('Camera', frame)
 				cv.WaitKey(5)
@@ -83,20 +83,27 @@ sample_size = 60
 if __name__=="__main__":
 
  
-	"""
+	
 	dc_motor = serial.Serial(port='/dev/ttyACM0', baudrate=9600, timeout=1)
 	time.sleep(1)
 	coinid_servo = CoinServoDriver()
+	
 	#for i in range(0,5,1):
-	get_new_coin(coinid_servo, dc_motor)
+	#get_new_coin(coinid_servo, dc_motor)
 	time.sleep(1)
-	#coinid_servo.arm_up(100)
-	#time.sleep(.2)
-	#coinid_servo.arm_down()
+	#	coinid_servo.arm_up(100)
+	#	time.sleep(.2)
+	#	coinid_servo.arm_down()
+	#	time.sleep(1)
+	#frame = grab_frame(1)
+	#img1 = cv.CreateImage(cv.GetSize(frame), cv.IPL_DEPTH_8U, 1)
+	#img1 = CVtoGray(frame)	
+	#cv.SaveImage("images/head_1.jpg", frame)
+	
 	dc_motor.close()
 	#cv.WaitKey()
 	#sys.exit(-1)	
-	"""
+	
 
 #	if len(sys.argv) < 4:
 #		print "******* Requires 3 image files of the same size."
@@ -104,15 +111,15 @@ if __name__=="__main__":
 #		sys.exit(-1)
 
 	try:
-		img1 = cv.LoadImage(sys.argv[1],cv.CV_LOAD_IMAGE_GRAYSCALE)
-		#frame = grab_frame(1)
-		#img1 = cv.CreateImage(cv.GetSize(frame), cv.IPL_DEPTH_8U, 1)
-		#img1 = CVtoGray(frame)
-
+		#img1 = cv.LoadImage(sys.argv[1],cv.CV_LOAD_IMAGE_GRAYSCALE)
+		frame = grab_frame(1)
+		img1 = cv.CreateImage(cv.GetSize(frame), cv.IPL_DEPTH_8U, 1)
+		img1 = CVtoGray(frame)
+		#cv.WaitKey()
 		#img1 = CV_enhance_edge(img1)
 		#cv.WaitKey()
-		img2 = cv.LoadImage(sys.argv[2],cv.CV_LOAD_IMAGE_GRAYSCALE)
-		img3 = cv.LoadImage(sys.argv[3],cv.CV_LOAD_IMAGE_GRAYSCALE)
+		img2 = cv.LoadImage(sys.argv[1],cv.CV_LOAD_IMAGE_GRAYSCALE)
+		img3 = cv.LoadImage(sys.argv[2],cv.CV_LOAD_IMAGE_GRAYSCALE)
 	except:
 		print "******* Could not open image files *******"
 		sys.exit(-1)

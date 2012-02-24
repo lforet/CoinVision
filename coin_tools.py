@@ -19,7 +19,7 @@ import mahotas
 from scipy.misc import imread, imshow
 
 
-visual = True
+visual = False
 
 
 
@@ -902,7 +902,7 @@ def compare_images_canny_sum(img1, img2):
 #########################################################
 
 def compare_images_lbp(img1, img2):
-	x = 180
+	x = 80
 	img1 = equalize_brightness(img1, img2)
 	
 	img1_copy = cv.GetMat(img1)
