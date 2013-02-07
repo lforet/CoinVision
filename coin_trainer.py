@@ -195,15 +195,18 @@ def find_features(img):
 	#gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	#gray = CVtoGray(numpy2CV(img))
 	#print gray
-	#edges = cv2.Canny(gray, 80, 120)
+	edges = cv2.Canny(img, 100, 200)
+	cv2.imwrite("canny.png", edges)
 	#imshow(edges)
 	#show()
-	features = cv2.HoughLinesP(img, 1, math.pi/2, 2, None, 10, 1);
-	#for line in lines[0]:
-	#	pt1 = (line[0],line[1])
-	#	pt2 = (line[2],line[3])
-	#	cv2.line(img, pt1, pt2, (0,0,255), 3)
-	#cv2.imwrite("C:/temp/2.png", img)
+	features = cv2.HoughLinesP(edges, 1, math.pi/180, 2, None, 10, 2);
+	temp_img = img
+	#features = cv2.HoughLinesP(img, 1, (math.pi/180), 2, 2, 10, 2);
+	for line in features[0]:
+		pt1 = (line[0],line[1])
+		pt2 = (line[2],line[3])
+		cv2.line(temp_img, pt1, pt2, (0,0,255), 3)
+	cv2.imwrite("cropped.png", temp_img)
 	#imshow(img)
 	#show()
 	print "houghlines:", features, len(features[0])
@@ -535,7 +538,7 @@ def subsection_image(pil_img, sections, visual):
 
 
 if __name__=="__main__":
- 	
+ 	'''
 	try:
 		dc_motor = serial.Serial(port='/dev/ttyACM2', baudrate=9600, timeout=1)
 		time.sleep(1)
@@ -558,7 +561,7 @@ if __name__=="__main__":
 	#cv.SaveImage("images/head_1.jpg", frame)
 	#cv.WaitKey()
 	#sys.exit(-1)	
-	
+	'''
 	print "********************************************************************"
 	print "*   must have coinvision hardware attched                          *"
 	print "********************************************************************"

@@ -58,7 +58,7 @@ if __name__ == "__main__":
         cv.ShowImage("Source", src)
         cv.ShowImage("Hough", color_dst)
 	if len(lines) < 100:
-		k = ord("s")
+		k = "s"
 		time.sleep(.2)
 		cv.WaitKey(10)
 	if len(lines) > 100:
