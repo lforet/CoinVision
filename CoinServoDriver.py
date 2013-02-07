@@ -6,7 +6,7 @@ class CoinServoDriver(object):
 		self.x_servo = x_servo
 		#self.y_servo = y_servo
 		#self.z_servo = z_servo
-		self.device = mm18usb('/dev/ttyACM2', '/dev/ttyACM1')
+		self.device = mm18usb('/dev/ttyACM1', '/dev/ttyACM0')
 		self.device.set_acceleration(self.x_servo,10)
 		self.device.set_speed(self.x_servo,10)
 		#self.device.set_acceleration(self.y_servo,10)

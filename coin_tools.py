@@ -9,7 +9,6 @@ import sys
 import cv
 import cv2
 import Image
-import numpy
 import numpy as np
 import scipy.spatial
 import time
@@ -17,11 +16,33 @@ from common import anorm
 #from functools import partial
 import mahotas
 from scipy.misc import imread, imshow
-
-
+from scipy.linalg import norm
+from scipy import sum, average
+import cPickle as pickle
 visual = False
 
 
+FLANN_INDEX_KDTREE = 1  # bug: flann enums are missing
+FLANN_INDEX_LSH    = 6
+
+###########################################################
+
+def compare_images(img1, img2):
+    # normalize to compensate for exposure difference, this may be unnecessary
+    # consider disabling it
+    img1 = normalize(img1)
+    img2 = normalize(img2)
+    # calculate the difference and its norms
+    diff = img1 - img2  # elementwise for scipy arrays
+    m_norm = sum(abs(diff))  # Manhattan norm
+    z_norm = norm(diff.ravel(), 0)  # Zero norm
+    return (m_norm, z_norm)
+
+def normalize(arr):
+    rng = arr.max()-arr.min()
+    amin = arr.min()
+    return (arr-amin)*255/rng
+###########################################################
 
 
 def CVtoGray(img):
@@ -90,6 +111,44 @@ def equalize_brightness(img1, img2):
 	return img1_copy
 
 ###########################################################
+def init_feature(name):
+    chunks = name.split('-')
+    if chunks[0] == 'sift':
+        detector = cv2.SIFT()
+        norm = cv2.NORM_L2
+    elif chunks[0] == 'surf':
+        detector = cv2.SURF(800)
+        norm = cv2.NORM_L2
+    elif chunks[0] == 'orb':
+        detector = cv2.ORB(400)
+        norm = cv2.NORM_HAMMING
+    else:
+        return None, None
+    if 'flann' in chunks:
+        if norm == cv2.NORM_L2:
+            flann_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+        else:
+            flann_params= dict(algorithm = FLANN_INDEX_LSH,
+                               table_number = 6, # 12
+                               key_size = 12,     # 20
+                               multi_probe_level = 1) #2
+        matcher = cv2.FlannBasedMatcher(flann_params, {})  # bug : need to pass empty dict (#1329)
+    else:
+        matcher = cv2.BFMatcher(norm)
+    return detector, matcher
+###########################################################
+def filter_matches(kp1, kp2, matches, ratio = 0.75):
+    mkp1, mkp2 = [], []
+    for m in matches:
+        if len(m) == 2 and m[0].distance < m[1].distance * ratio:
+            m = m[0]
+            mkp1.append( kp1[m.queryIdx] )
+            mkp2.append( kp2[m.trainIdx] )
+    p1 = np.float32([kp.pt for kp in mkp1])
+    p2 = np.float32([kp.pt for kp in mkp2])
+    kp_pairs = zip(mkp1, mkp2)
+    return p1, p2, kp_pairs
+###########################################################
 
 def surf_dif(img1, img2):
 	#only features with a keypoint.hessian > 600 will be extracted
@@ -108,10 +167,9 @@ def surf_dif(img1, img2):
 	print "found %d keypoints for img2"%len(keypoints2)
 
 	#feature matching
-	ft = cv.CreateKDTree(descriptors1)
-	indices, distances = cv.FindFeatures(ft, descriptors2, 1, 250)
-	cv.cvReleaseFeatureTree(ft)
-
+	raw_matches =  match_flann(descriptors1, descriptors2, r_threshold = 0.6)
+	print raw_matches
+	sys.exit(-1)
 	#the C max value for a long (no limit in python)
 	DBL_MAX = 1.7976931348623158e+308
 	reverseLookup = [-1]*keypoints1.rows
@@ -168,6 +226,82 @@ def match_bruteforce(desc1, desc2, r_threshold = 0.75):
         if r < r_threshold:
             res.append((i, n1))
     return np.array(res)
+
+###########################################################
+def pickle_keypoints(keypoints, descriptors):
+	i = 0
+	temp_array = []
+	for point in keypoints:
+		temp = (point.pt, point.size, point.angle, point.response, point.octave, 
+        point.class_id, descriptors[i])      
+		++i
+		temp_array.append(temp)
+	return temp_array
+
+###########################################################
+def unpickle_keypoints(array):
+	i = 0
+	keypoints = []
+	descriptors = []
+	for point in array:
+		#print point
+		temp_feature = cv2.KeyPoint(x=point[0][0],y=point[0][1],_size=point[1], _angle=point[2], _response=point[3], _octave=point[4], _class_id=point[5]) 
+		temp_descriptor = point[6]
+		
+		#i = i +1
+		keypoints.append(temp_feature)
+		descriptors.append(temp_descriptor)
+		#print len(keypoints)
+	#print keypoints, descriptors
+	return keypoints, np.array(descriptors)
+
+###########################################################
+def compare_images_features_points(img1, img2, feature_name):
+	#from common import anorm, getsize
+	FLANN_INDEX_KDTREE = 1  # bug: flann enums are missing
+	FLANN_INDEX_LSH    = 6
+
+	#Feature to use. Can be sift, surf of orb
+	detector, matcher = init_feature(feature_name)
+	if detector != None:
+		print 'using', feature_name
+	else:
+		print 'unknown feature:', feature_name
+		sys.exit(1)
+	
+	kp1, desc1 = detector.detectAndCompute(img1, None)
+	kp2, desc2 = detector.detectAndCompute(img2, None)
+	print len(kp1), type(kp1), type(desc1)
+
+	temp_array = []
+	temp = pickle_keypoints(kp1, desc1)
+	temp_array.append(temp)
+	temp = pickle_keypoints(kp2, desc2)
+	temp_array.append(temp)
+	pickle.dump(temp_array, open("save.p", "wb"))
+	keypoints_database = pickle.load( open( "save.p", "rb" ) )
+	print "keypoints_database:" , len(keypoints_database[0]), len(keypoints_database[1])
+	kp1, desc1 = unpickle_keypoints(keypoints_database[0])
+	kp2, desc2 = unpickle_keypoints(keypoints_database[1])
+	#sys.exit(-1)
+	#np.save("kp1.npy", kp1)
+	#print "desc1:", desc1
+	#np.save("desc1.npy", desc1)
+	print len(kp1), type(kp1), type(desc1)
+	
+	print 'img1 - %d features, img2 - %d features' % (len(kp1), len(kp2))
+	print 'matching...'
+	raw_matches = matcher.knnMatch(desc1, trainDescriptors = desc2, k = 2) #2
+	p1, p2, kp_pairs = filter_matches(kp1, kp2, raw_matches)
+	if len(p1) >= 4:
+		H, status = cv2.findHomography(p1, p2, cv2.RANSAC, 5.0)
+		print '%d / %d  inliers/matched' % (np.sum(status), len(status))
+	else:
+		H, status = None, None
+		print '%d matches found, not enough for homography estimation' % len(p1)
+	return
+
+
 
 ###########################################################
 
@@ -416,16 +550,19 @@ def array2image(arry):
 ###########################################################
 
 def PILtoCV(PIL_img):
-	cv_img = cv.CreateImageHeader(PIL_img.size, cv.IPL_DEPTH_8U, 1)
-	cv.SetData(cv_img, PIL_img.tostring())
+	if PIL_img.mode == "L": channels = 1
+	if PIL_img.mode == "RGB": channels = 3
+	if PIL_img.mode == "CMYK": channels = 4
+	cv_img = cv.CreateImageHeader(PIL_img.size, cv.IPL_DEPTH_8U, channels) # RGB image
+	cv.SetData(cv_img, PIL_img.tostring(), PIL_img.size[0] * channels)
 	return cv_img
 
 ###########################################################
 
 def CVtoPIL(img):
 	"""converts CV image to PIL image"""
-	cv_img = cv.CreateMatHeader(cv.GetSize(img)[1], cv.GetSize(img)[0], cv.CV_8UC1)
-	#cv.SetData(cv_img, pil_img.tostring())
+	#cv_img = cv.CreateMatHeader(cv.GetSize(img)[1], cv.GetSize(img)[0], cv.CV_8UC1)
+	cv_im = cv.CreateImage(cv.GetSize(img), cv.IPL_DEPTH_8U, 1)
 	pil_img = Image.fromstring("L", cv.GetSize(img), img.tostring())
 	return pil_img
 ###########################################################
@@ -441,8 +578,15 @@ def rmsdiff(img1, img2):
     ) / (float(img1.size[0]) * img1.size[1]))
 
 ###########################################################
-
-
+def rmsdiff_2011(im1, im2):
+    "Calculate the root-mean-square difference between two images"
+    diff = ImageChops.difference(im1, im2)
+    h = diff.histogram()
+    sq = sq = (value*((idx%256)**2) for idx, value in enumerate(h))
+    sum_of_squares = sum(sq)
+    rms = math.sqrt(sum_of_squares/float(im1.size[0] * im1.size[1]))
+    return rms
+###########################################################
 def rms_dist(x,y):   
     return numpy.sqrt(numpy.sum((x-y)**2))
 
@@ -1258,3 +1402,109 @@ def compare_images_orientation(img1, img2, sample_size):
 		imgget_orientation_sobel(img1, img2, sample_size)
 
 
+##############################################################
+def compare_images_haralick(img1, img2):
+	x = 80
+	print "equalizing brightness"
+	img1 = equalize_brightness(img1, img2)
+	#img1_copy = cv.GetMat(img1)
+	img1_copy = cv.CloneImage(img1)
+
+	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3,3)
+	cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+
+	cv.DestroyWindow("haralick Coin 1")
+	print "after smoothing, canny"
+	cv.ShowImage  ("haralick Coin 1", img1_copy )
+	cv.MoveWindow ('haralick Coin 1', (101 + (1 * (cv.GetSize(img1_copy)[0]))) , 100)
+	if visual == True:
+		print "Smoothed and Canny Filter img1..."
+		print "Press any key to continue..."
+		cv.WaitKey()
+	img1_features = mahotas.features.haralick(cv2array(img1_copy)).mean(0)
+	#print "img1_features:", img1_features, img1_features.shape 
+	img1_features  = img1_features.reshape(1, img1_features.shape[0])
+	print "img1_features:", img1_features 
+	cv.WaitKey(10)
+	
+
+	img2_copy = cv.CloneImage(img2)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
+	cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
+
+	cv.DestroyWindow("haralick Coin 2")
+	cv.ShowImage  ("haralick Coin 2", img2_copy )
+	cv.MoveWindow ('haralick Coin 2', (101 + (1 * (cv.GetSize(img2_copy)[0]))) , (125 + (cv.GetSize(img2_copy)[0])) )
+	if visual == True:
+		print "Smoothed and Canny Filter img2..."
+		print "Press any key to continue..."
+		cv.WaitKey()
+	img2_features = mahotas.features.haralick(cv2array(img2_copy)).mean(0)
+	img2_features  = img2_features.reshape(1, img2_features.shape[0])
+	print "img2_features:", img2_features
+	cv.WaitKey(10)
+	distance = scipy.spatial.distance.cdist(img1_features, img2_features, 'euclidean')
+	#if visual == True:
+	print "Completed HARALICK comparison.."
+	print "Euclidian distance: ", distance
+	print "Press any key to continue..."
+	rms_dif = rmsdiff(CVtoPIL(img1_copy), CVtoPIL(img2_copy))
+	print "RMS Dif:", rms_dif 
+	cv.WaitKey()
+	return (distance)
+
+
+###########################################################
+##############################################################
+def compare_images_rms(img1, img2):
+	x = 80
+	print "equalizing brightness"
+	img1 = equalize_brightness(img1, img2)
+	#img1_copy = cv.GetMat(img1)
+	img1_copy = cv.CloneImage(img1)
+
+	cv.Smooth(img1_copy , img1_copy, cv.CV_GAUSSIAN,3,3)
+	cv.Canny(img1_copy , img1_copy  ,cv.Round((x/2)),x, 3)
+
+	cv.DestroyWindow("haralick Coin 1")
+	print "after smoothing, canny"
+	cv.ShowImage  ("haralick Coin 1", img1_copy )
+	cv.MoveWindow ('haralick Coin 1', (101 + (1 * (cv.GetSize(img1_copy)[0]))) , 100)
+	if visual == True:
+		print "Smoothed and Canny Filter img1..."
+		print "Press any key to continue..."
+		cv.WaitKey()
+	img1_features = mahotas.features.haralick(cv2array(img1_copy)).mean(0)
+	#print "img1_features:", img1_features, img1_features.shape 
+	img1_features  = img1_features.reshape(1, img1_features.shape[0])
+	print "img1_features:", img1_features 
+	cv.WaitKey(10)
+	
+
+	img2_copy = cv.CloneImage(img2)
+	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
+	cv.Canny(img2_copy , img2_copy  ,x/2, x, 3)
+
+	cv.DestroyWindow("haralick Coin 2")
+	cv.ShowImage  ("haralick Coin 2", img2_copy )
+	cv.MoveWindow ('haralick Coin 2', (101 + (1 * (cv.GetSize(img2_copy)[0]))) , (125 + (cv.GetSize(img2_copy)[0])) )
+	if visual == True:
+		print "Smoothed and Canny Filter img2..."
+		print "Press any key to continue..."
+		cv.WaitKey()
+	img2_features = mahotas.features.haralick(cv2array(img2_copy)).mean(0)
+	img2_features  = img2_features.reshape(1, img2_features.shape[0])
+	print "img2_features:", img2_features
+	cv.WaitKey(10)
+	distance = scipy.spatial.distance.cdist(img1_features, img2_features, 'euclidean')
+	#if visual == True:
+	print "Completed HARALICK comparison.."
+	print "Euclidian distance: ", distance
+	print "Press any key to continue..."
+	rms_dif = rmsdiff(CVtoPIL(img1_copy), CVtoPIL(img2_copy))
+	print "RMS Dif:", rms_dif 
+	cv.WaitKey()
+	return (distance)
+
+
+###########################################################
