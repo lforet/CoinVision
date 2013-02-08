@@ -7,6 +7,7 @@ import cv
 import urllib2
 from coin_tools import *
 import time
+import scipy.spatial
 # toggle between CV_HOUGH_STANDARD and CV_HOUGH_PROBILISTIC
 USE_STANDARD = False
 
@@ -51,17 +52,20 @@ if __name__ == "__main__":
             lines = cv.HoughLines2(dst, storage, cv.CV_HOUGH_PROBABILISTIC, 1, pi / 180, 50, 50, 10)
             for line in lines:
                 cv.Line(color_dst, line[0], line[1], cv.CV_RGB(255, 0, 0), 3, 8)
+	if r == 0:
+		org_lines = lines
 	if USE_STANDARD: print "STANDARD"
 	else: print "Probalistic"
 	print "canny:", x,  "  degrees:", r
 	print "lines:", len(lines)
+	print "dist: ", scipy.spatial.distance.cdist(lines, org_lines,'euclidean')
         cv.ShowImage("Source", src)
         cv.ShowImage("Hough", color_dst)
-	if len(lines) < 100:
+	if len(lines) < 150:
 		k = ord("s")
 		time.sleep(.2)
 		cv.WaitKey(10)
-	if len(lines) > 100:
+	if len(lines) > 150:
 		#print "wait"
         	k = cv.WaitKey(0)
 	print k

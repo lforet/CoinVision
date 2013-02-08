@@ -99,16 +99,53 @@ def snap_shot(usb_device):
 	return frame
  
 
-def display_image(img):
-	time.sleep(1)
+def display_image(img, wait_time):
+	global ready_to_display
+	while ready_to_display != True:
+		time.sleep(.1)
+		#print "waiting"
+	#time.sleep(wait_time)
+	img = CVtoPIL(array2cv(img))
+	img = img.transpose(1)
+	#img = img.transpose(2)
+
+	#img.save("pil.png")
 	pylab.ion()
-	a = imread(img)
+	#a = imread(img)
 	#print "a:", a
-	pylab.imshow(a)
+	pylab.imshow(img)
 	pylab.draw()
-	#time.sleep(5)
-	#pylab.ioff()
-	#sys.exit(-1)
+	
+
+
+def houghlines(img, min_lines):
+	x = 500
+	edges = cv2.Canny(img, (int(x/2)), x , apertureSize=3)
+	lines = cv2.HoughLinesP(edges, 1, math.pi/180, 50, None, 50, 10);
+	
+	while len(lines[0]) < min_lines:
+		edges = cv2.Canny(img, (int(x/2)), x , apertureSize=3)
+		#cv2.imwrite("canny.png", edges)
+		lines = cv2.HoughLinesP(edges, 1, math.pi/180, 50, None, 50, 10);
+		print "x: ", x , " Lines: ", len(lines[0])
+		x = x -5
+		#time.sleep(.2)
+	cv2.imwrite("canny.png", edges)
+	temp_img = img
+	for line in lines[0]:
+		pt1 = (line[0],line[1])
+		pt2 = (line[2],line[3])
+		cv2.line(temp_img, pt1, pt2, (0,0,255), 3)
+	#cv2.imwrite("houghlines.png", temp_img)
+	print "houghlines:", len(lines[0])
+	#ready_to_display = True
+	#display =Thread(target=display_image, args=(temp_img,.1,))
+	#display.daemon=True
+	#display.start()
+	ready_to_display = True
+ 	display_image(temp_img, 1)
+	
+	return lines
 
 def preprocess_img(img1):
 	print "Greying image"
@@ -116,21 +153,27 @@ def preprocess_img(img1):
 	print "Finding Center of Coin"
 	coin_center = find_center_of_coin(grey)
 	print "Center of Coin:", coin_center
-	'''
+	
 	print "Smoothing Image"
 	cv.Smooth(grey,grey,cv.CV_GAUSSIAN,3,3)
-	x=120
-	cv.Canny(grey,grey,cv.Round((x/2)),x, 3)
-	'''
+	#x=120
+	#cv.Canny(grey,grey,cv.Round((x/2)),x, 3)
+	
 	cropped = center_crop(grey, coin_center, 50)
 	cv2.imwrite("cropped.png", cv2array(cropped))
-	#pil_cropped = CVtoPIL(cropped)
-	#pil_cropped.show()
-	print cropped
+	
+	#########################################
+	#		Display Results
+	#######################
+	display =Thread(target=display_image, args=(cv2array(cropped),.1,))
+	display.daemon=True
+	display.start()
 	return cv2array(cropped)
 
 
 def find_features(img):
+	features = houghlines(img, 125)
+
 	#print img, type(img)
 
 	#gray scale the image if neccessary
@@ -195,21 +238,7 @@ def find_features(img):
 	#gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	#gray = CVtoGray(numpy2CV(img))
 	#print gray
-	edges = cv2.Canny(img, 80, 120)
-	cv2.imwrite("canny.png", edges)
-	#imshow(edges)
-	#show()
-	features = cv2.HoughLinesP(edges, 1, math.pi/180, 2, None, 10, 2);
-	temp_img = img
-	#features = cv2.HoughLinesP(img, 1, (math.pi/180), 2, 2, 10, 2);
-	for line in features[0]:
-		pt1 = (line[0],line[1])
-		pt2 = (line[2],line[3])
-		cv2.line(temp_img, pt1, pt2, (0,0,255), 3)
-	cv2.imwrite("cropped.png", temp_img)
-	#imshow(img)
-	#show()
-	print "houghlines:", features, len(features[0])
+
 	#except:
 	#	print "no houghlines available"
 	#img1 = mahotas.imread('temp.png')
@@ -258,12 +287,7 @@ def find_features(img):
 		#	print math.log10(x)
 	print "degree = ", degree
 	'''
-	#########################################
-	#		Display Results
-	#######################
-	display =Thread(target=display_image, args=('cropped.png',))
-	display.daemon=True
-	display.start()
+
 	return features
 
 def classify(model, features):
@@ -538,6 +562,7 @@ def subsection_image(pil_img, sections, visual):
 
 
 if __name__=="__main__":
+	ready_to_display = False
  	'''
 	try:
 		dc_motor = serial.Serial(port='/dev/ttyACM2', baudrate=9600, timeout=1)
@@ -584,6 +609,7 @@ if __name__=="__main__":
 	reply =""
 	#eg.rootWindowPosition = "+100+100"
 	while True:
+		ready_to_display = False
 		#eg.rootWindowPosition = eg.rootWindowPosition
 		print 'reply=', reply		
 
@@ -653,7 +679,7 @@ if __name__=="__main__":
 			img1 = cv2.imread('temp.png')
 			img1 = preprocess_img(img1)
 			find_features(img1)
-
+			ready_to_display = True
 
 
 		if reply == "Retrain AI":
