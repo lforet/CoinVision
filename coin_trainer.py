@@ -6,7 +6,6 @@ sys.path.append( "../lib/" )
 
 import easygui as eg
 from img_processing_tools import *
-#from PIL import Image
 from PIL import ImageStat, Image, ImageDraw
 import cv, cv2 
 import time
@@ -89,64 +88,83 @@ def snap_shot(usb_device):
 	#	print "Unexpected error:", sys.exc_info()[0]
 		#raise		
 		#sys.exit(-1)
-	print frame
-	print webcam1
+	#print frame
+	#print webcam1
 	#while webcam1 != None:
 	cv2.VideoCapture(usb_device).release()
-	print webcam1
+	#print webcam1
 	#time.sleep(1)
 	#print webcam1
 	return frame
  
 
-def display_image(img, wait_time):
+def display_image(img_filename, wait_time):
 	global ready_to_display
 	while ready_to_display != True:
-		time.sleep(.1)
+		time.sleep(1)
 		#print "waiting"
 	#time.sleep(wait_time)
-	img = CVtoPIL(array2cv(img))
-	img = img.transpose(1)
+	img = imread(img_filename)
+	#img = CVtoPIL(array2cv(img))
+	#img = img.transpose(1)
 	#img = img.transpose(2)
 
 	#img.save("pil.png")
 	pylab.ion()
-	#a = imread(img)
+	
 	#print "a:", a
 	pylab.imshow(img)
 	pylab.draw()
 	
+def houghlines(img, num_lines):
+	"""
+	Python: cv2.HoughLinesP(image, rho, theta, threshold[, lines[, minLineLength[, maxLineGap]]]) -> lines
+	Parameters:	
+	image - 8-bit, single-channel binary source image. The image may be modified by the function.
+	lines - Output vector of lines. Each line is represented by a 4-element vector, where and are the ending points of each detected line segment.
+	rho - Distance resolution of the accumulator in pixels.
+	theta - Angle resolution of the accumulator in radians.
+	threshold - Accumulator threshold parameter. Only those lines are returned that get enough votes (  ).
+	minLineLength - Minimum line length. Line segments shorter than that are rejected.
+	maxLineGap - Maximum allowed gap between points on the same line to link them.
+	"""
+	x = 400
+	lines = np.array([[[]]])
+	while len(lines[0]) < num_lines:
+		try:
+			edges = cv2.Canny(img, (int(x/2)), x , apertureSize=3)
 
-
-def houghlines(img, min_lines):
-	global ready_to_display
-	x = 500
-	edges = cv2.Canny(img, (int(x/2)), x , apertureSize=3)
-	lines = cv2.HoughLinesP(edges, 1, math.pi/180, 50, None, 50, 10);
-	
-	while len(lines[0]) < min_lines:
-		edges = cv2.Canny(img, (int(x/2)), x , apertureSize=3)
-		#cv2.imwrite("canny.png", edges)
-		lines = cv2.HoughLinesP(edges, 1, math.pi/180, 50, None, 50, 10);
-		print "x: ", x , " Lines: ", len(lines[0])
-		x = x -5
+			lines = cv2.HoughLinesP(edges, 1, math.pi/180, 40, None, 40, 10);
+			if lines == None: 
+				lines = np.array([[[]]])
+			print "x: ", x , " Lines: ", len(lines[0])
+			x = x -5
+		except:
+			x = x -5
 		#time.sleep(.2)
 	cv2.imwrite("canny.png", edges)
+	
 	temp_img = img
 	for line in lines[0]:
 		pt1 = (line[0],line[1])
 		pt2 = (line[2],line[3])
-		cv2.line(temp_img, pt1, pt2, (0,0,255), 3)
-	#cv2.imwrite("houghlines.png", temp_img)
-	print "houghlines:", len(lines[0])
+		cv2.line(temp_img, pt1, pt2, (0,0,255), 1)
+	temp_top_lines = lines[0][:num_lines]
+	cv2.imwrite("houghlines.png", temp_img)
+	cv2.imwrite("cropped.png", temp_img)
+	top_lines = []
+	for line in temp_top_lines:
+		#print ([[line[0],line[1]]])
+		dist = scipy.spatial.distance.cdist(([[line[0],line[1]]]), ([[line[2], line[3]]]), 'euclidean')
+		#print "Line:", line, "  dist:", dist
+		top_lines.extend([line[0],line[1], line[2], line[3]])
+		top_lines.append(dist[0][0])
+	print "houghlines:", top_lines, len(top_lines)
 	#ready_to_display = True
-	#display =Thread(target=display_image, args=(temp_img,.1,))
+	#display = Thread(target=display_image, args=("houghlines.png",1,))
 	#display.daemon=True
 	#display.start()
-	ready_to_display = True
- 	display_image(temp_img, 1)
-	
-	return lines
+	return top_lines
 
 def preprocess_img(img1):
 	print "Greying image"
@@ -157,8 +175,8 @@ def preprocess_img(img1):
 	
 	print "Smoothing Image"
 	cv.Smooth(grey,grey,cv.CV_GAUSSIAN,3,3)
-	#x=120
-	#cv.Canny(grey,grey,cv.Round((x/2)),x, 3)
+	x=140
+	cv.Canny(grey,grey,cv.Round((x/2)),x, 3)
 	
 	cropped = center_crop(grey, coin_center, 50)
 	cv2.imwrite("cropped.png", cv2array(cropped))
@@ -166,15 +184,35 @@ def preprocess_img(img1):
 	#########################################
 	#		Display Results
 	#######################
-	display =Thread(target=display_image, args=(cv2array(cropped),.1,))
+	display =Thread(target=display_image, args=("cropped.png",.05,))
 	display.daemon=True
 	display.start()
+	print "Finshed preprocessing..."
 	return cv2array(cropped)
+	#return cropped
 
+def binary_compare(img):
+	#print img, type(img), img.shape
+	#time.sleep(5)
+	#print img[0]
+	features = []
+	features = flatten(img)
+	 
+	#for line in img:
+	#	print "new Line:" , line
+		#print ([[line[0],line[1]]])
+		#dist = scipy.spatial.distance.cdist(([[line[0],line[1]]]), ([[line[2], line[3]]]), 'euclidean')
+		#print "Line:", line, "  dist:", dist
+		#features.extend(line[0])
+		#top_lines.append(dist[0][0])
+	#features = 
+	#time.sleep(5)
+	#print features, len(features)
+	return features
 
 def find_features(img):
-	features = houghlines(img, 125)
-
+	#features = houghlines(img, 100)
+	features = binary_compare(img)
 	#print img, type(img)
 
 	#gray scale the image if neccessary
@@ -224,17 +262,7 @@ def find_features(img):
 	#show()
 	'''
 	#houghlines opencv
-	"""
-	Python: cv2.HoughLinesP(image, rho, theta, threshold[, lines[, minLineLength[, maxLineGap]]]) -> lines
-	Parameters:	
-	image - 8-bit, single-channel binary source image. The image may be modified by the function.
-	lines - Output vector of lines. Each line is represented by a 4-element vector, where and are the ending points of each detected line segment.
-	rho - Distance resolution of the accumulator in pixels.
-	theta - Angle resolution of the accumulator in radians.
-	threshold - Accumulator threshold parameter. Only those lines are returned that get enough votes (  ).
-	minLineLength - Minimum line length. Line segments shorter than that are rejected.
-	maxLineGap - Maximum allowed gap between points on the same line to link them.
-	"""
+
 	#try:
 	#gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	#gray = CVtoGray(numpy2CV(img))
@@ -389,11 +417,11 @@ def process_all_images():
 		save_data(features, classID)
 
 def train_ai():
-		data = []
-		classID = []
-		features = []
-		features_temp_array = []
-		try: 
+			data = []
+			classID = []
+			features = []
+			features_temp_array = []
+		#try: 
 			data_filename = 'coinvision_feature_data.csv'
 			print 'reading features and classID: ', data_filename
 			f_handle = open(data_filename, 'r')
@@ -425,20 +453,20 @@ def train_ai():
 			model = learner.train(features, classID)
 			pickle.dump( model, open( "coinvision_ai_model.mdl", "wb" ) )
 
-		except:
+		#except:
 			print "could not retrain.. bad file"
-		'''
-		from sklearn import svm
-		model = svm.SVC(gamma=0.001, C=100.)
-		model.fit(features, classID)
-		pickle.dump( model, open( "coinvision_ai_model_svc.mdl", "wb" ) )
+			'''
+			from sklearn import svm
+			model = svm.SVC(gamma=0.001, C=100.)
+			model.fit(features, classID)
+			pickle.dump( model, open( "coinvision_ai_model_svc.mdl", "wb" ) )
 
-		from sklearn.neighbors import KNeighborsClassifier
-		neigh = KNeighborsClassifier(n_neighbors=3)
-		neigh.fit(features, classID)
-		pickle.dump( model, open( "coinvision_ai_model_knn.mdl", "wb" ) )
-		'''
-		return 
+			from sklearn.neighbors import KNeighborsClassifier
+			neigh = KNeighborsClassifier(n_neighbors=3)
+			neigh.fit(features, classID)
+			pickle.dump( model, open( "coinvision_ai_model_knn.mdl", "wb" ) )
+			'''
+			return 
 
 def sift():
 	
@@ -485,8 +513,8 @@ def sift():
 
 	print skp_final
 	'''
-	compare_images_features_points(img1, img2, 'sift')
-	#compare_images_features_points(img1, img2, 'surf')
+	#compare_images_features_points(img1, img2, 'sift')
+	compare_images_features_points(img1, img2, 'surf')
 	#compare_images_features_points(img1, img2, 'orb')
 
 	return
@@ -560,11 +588,86 @@ def subsection_image(pil_img, sections, visual):
 	#return fingerprint
 	return 9
 
+def compare_rms(img_to_classify):
+	path = "../coin_images/"
+	#print path+'jheads/*.jpg'
+	classID = 0
+	score = 99999999
+	print img_to_classify.shape
+	temp_img_to_classify = preprocess_img(img_to_classify)
+	for name in glob.glob(path+'jheads/*.jpg'):
+		print name
+		img = cv2.imread(name)
+		img = preprocess_img(img)
+		#print temp_img_to_classify, type(temp_img_to_classify), temp_img_to_classify.shape
+		cv_temp_img_to_classify = array2cv(temp_img_to_classify)
+		for x in range(360):
+			temp_cv = rotate_image(array2cv(temp_img_to_classify),x)
+			#print temp_cv
+			#sys.exit(-1)
+			temp_score = compare_images(cv2array(temp_cv), img)
+			#print "score:", temp_score[0]
+			if temp_score[0] < score:
+				score = temp_score[0]
+				classID = "1"
+				print "New Score:", score, "  New classID:", classID
+	#sys.exit(-1)
 
+	for name in glob.glob(path+'jtails/*.jpg'):
+		print name
+		img = cv2.imread(name)
+		img = preprocess_img(img)
+		#print temp_img_to_classify, type(temp_img_to_classify), temp_img_to_classify.shape
+		cv_temp_img_to_classify = array2cv(temp_img_to_classify)
+		for x in range(360):
+			temp_cv = rotate_image(array2cv(temp_img_to_classify),x)
+			#print temp_cv
+			#sys.exit(-1)
+			temp_score = compare_images(cv2array(temp_cv), img)
+			#print "score:", temp_score[0]
+			if temp_score[0] < score:
+				score = temp_score[0]
+				classID = "2"
+				print "New Score:", score, "  New classID:", classID
+
+	for name in glob.glob(path+'oheads/*.jpg'):
+		print name
+		img = cv2.imread(name)
+		img = preprocess_img(img)
+		#print temp_img_to_classify, type(temp_img_to_classify), temp_img_to_classify.shape
+		cv_temp_img_to_classify = array2cv(temp_img_to_classify)
+		for x in range(360):
+			temp_cv = rotate_image(array2cv(temp_img_to_classify),x)
+			#print temp_cv
+			#sys.exit(-1)
+			temp_score = compare_images(cv2array(temp_cv), img)
+			#print "score:", temp_score[0]
+			if temp_score[0] < score:
+				score = temp_score[0]
+				classID = "3"
+				print "New Score:", score, "  New classID:", classID
+
+	for name in glob.glob(path+'otails/*.jpg'):
+		print name
+		img = cv2.imread(name)
+		img = preprocess_img(img)
+		#print temp_img_to_classify, type(temp_img_to_classify), temp_img_to_classify.shape
+		cv_temp_img_to_classify = array2cv(temp_img_to_classify)
+		for x in range(360):
+			temp_cv = rotate_image(array2cv(temp_img_to_classify),x)
+			#print temp_cv
+			#sys.exit(-1)
+			temp_score = compare_images(cv2array(temp_cv), img)
+			#print "score:", temp_score[0]
+			if temp_score[0] < score:
+				score = temp_score[0]
+				classID = "4"
+				print "New Score:", score, "  New classID:", classID
+	print "Final classID:", classID
 
 if __name__=="__main__":
 	ready_to_display = False
- 	'''
+ 	
 	try:
 		dc_motor = serial.Serial(port='/dev/ttyACM2', baudrate=9600, timeout=1)
 		time.sleep(1)
@@ -581,13 +684,8 @@ if __name__=="__main__":
 	time.sleep(.2)
 	coinid_servo.arm_down()
 	time.sleep(.2)
-	#frame = grab_frame(1)
-	#img1 = cv.CreateImage(cv.GetSize(frame), cv.IPL_DEPTH_8U, 1)
-	#img1 = CVtoGray(frame)	
-	#cv.SaveImage("images/head_1.jpg", frame)
-	#cv.WaitKey()
-	#sys.exit(-1)	
-	'''
+
+	
 	print "********************************************************************"
 	print "*   must have coinvision hardware attched                          *"
 	print "********************************************************************"
@@ -607,9 +705,10 @@ if __name__=="__main__":
 			print "Unexpected error:", sys.exc_info()[0]
 			#raise		
 			sys.exit(-1)
-	reply =""
 	#eg.rootWindowPosition = "+100+100"
+	reply = ""
 	while True:
+		
 		ready_to_display = False
 		#eg.rootWindowPosition = eg.rootWindowPosition
 		print 'reply=', reply		
@@ -617,48 +716,49 @@ if __name__=="__main__":
 		#if reply == "": reply = "Next Frame"
 
 		if reply == "JHEAD":
-			if img1 != None:
-				path = "../coin_images/jheads/"
-				filename = str(time.time()) + ".jpg"
-				image_to_save = array2image(img1)
-				image_to_save.save(path+filename)	
+			img1 = cv2.imread('temp.png')
+			path = "../coin_images/jheads/"
+			filename = str(time.time()) + ".jpg"
+			image_to_save = array2image(img1)
+			image_to_save.save(path+filename)	
 
 		if reply == "JTAIL":
-			if img1 != None:
-				path = "../coin_images/jtails/"
-				filename = str(time.time()) + ".jpg"
-				image_to_save = array2image(img1)
-				image_to_save.save(path+filename)	
+			img1 = cv2.imread('temp.png')
+			path = "../coin_images/jtails/"
+			filename = str(time.time()) + ".jpg"
+			image_to_save = array2image(img1)
+			image_to_save.save(path+filename)	
 
 		if reply == "OHEAD":
-			if img1 != None:
-				path = "../coin_images/oheads/"
-				filename = str(time.time()) + ".jpg"
-				image_to_save = array2image(img1)
-				image_to_save.save(path+filename)
+			img1 = cv2.imread('temp.png')
+			path = "../coin_images/oheads/"
+			filename = str(time.time()) + ".jpg"
+			image_to_save = array2image(img1)
+			image_to_save.save(path+filename)
 
 
 		if reply == "OTAIL":
-			if img1 != None:
-				path = "../coin_images/otails/"
-				filename = str(time.time()) + ".jpg"
-				image_to_save = array2image(img1)
-				image_to_save.save(path+filename)
+			img1 = cv2.imread('temp.png')
+			path = "../coin_images/otails/"
+			filename = str(time.time()) + ".jpg"
+			image_to_save = array2image(img1)
+			image_to_save.save(path+filename)
 
 		if reply == "Test Img":	
-			classID = "2"
-			if img1 != None:
-				path = "../coin_images/unclassified/"
-				filename = str(time.time()) + ".jpg"
-				image_to_save = array2image(img1)
-				image_to_save.save(path+filename)
+			img1 = cv2.imread('temp.png')
+			path = "../coin_images/unclassified/"
+			filename = str(time.time()) + ".jpg"
+			image_to_save = array2image(img1)
+			image_to_save.save(path+filename)
 		
 		if reply == "Quit":
 			print "Quitting...."
 			sys.exit(-1)
 
-		if reply == "SIFT":
-			sift()
+		if reply == "RMS":
+			#sift()
+			img_to_classify = cv2.imread('temp.png')
+			compare_rms(img_to_classify)
 
 		if reply == "Predict":
 			print "AI predicting"
@@ -721,10 +821,8 @@ if __name__=="__main__":
 			f_handle = open(data_filename, 'w')
 			f_handle.write('')
 			f_handle.close()
-
 		try:
-			print "trying"
-			reply =	eg.buttonbox(msg='Coin Trainer', title='Coin Trainer', choices=('SIFT', 'JHEAD', 'JTAIL', 'OHEAD', 'OTAIL', 'Test Img', 'Next Coin', 'Predict', 'Features','Process Imgs', 'Retrain AI' , 'Del AI File', 'Quit'), image='temp.png', root=None)
+			reply =	eg.buttonbox(msg='Coin Trainer', title='Coin Trainer', choices=('RMS', 'JHEAD', 'JTAIL', 'OHEAD', 'OTAIL', 'Test Img', 'Next Coin', 'Predict', 'Features','Process Imgs', 'Retrain AI' , 'Del AI File', 'Quit'), image='temp.png', root=None)
 		except:
 			pass
 

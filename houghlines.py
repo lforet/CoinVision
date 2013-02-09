@@ -25,13 +25,13 @@ if __name__ == "__main__":
 
     cv.NamedWindow("Source", 1)
     cv.NamedWindow("Hough", 1)
-    x = 1000
+    x = 500
     r = 0
     while True:
-	if r > 360: r = 0
+        if r > 360: r = 0
         dst = cv.CreateImage(cv.GetSize(src), 8, 1)
-	rt = cv.CreateImage(cv.GetSize(src), 8, 1)
-	rt = rotate_image(src, r)
+        rt = cv.CreateImage(cv.GetSize(src), 8, 1)
+        rt = rotate_image(src, r)
         color_dst = cv.CreateImage(cv.GetSize(src), 8, 3)
         storage = cv.CreateMemStorage(0)
         lines = 0
@@ -58,25 +58,25 @@ if __name__ == "__main__":
 	else: print "Probalistic"
 	print "canny:", x,  "  degrees:", r
 	print "lines:", len(lines)
-	print "dist: ", scipy.spatial.distance.cdist(lines, org_lines,'euclidean')
+	#print "dist: ", scipy.spatial.distance.cdist(lines, org_lines,'euclidean')
         cv.ShowImage("Source", src)
         cv.ShowImage("Hough", color_dst)
-	if len(lines) < 150:
-		k = ord("s")
-		time.sleep(.2)
-		cv.WaitKey(10)
-	if len(lines) > 150:
+	#if len(lines) < 125:
+	#	k = ord("s")
+	#	time.sleep(.2)
+	#	cv.WaitKey(10)
+	#if len(lines) > 125:
 		#print "wait"
-        	k = cv.WaitKey(0)
-	print k
-        if k == ord(' '):
-            USE_STANDARD = not USE_STANDARD
+    k = cv.WaitKey(0)
+    print k
+    if k == ord(' '):
+        USE_STANDARD = not USE_STANDARD
 	if k == ord('w'):
 		x = x +10
 	if k == ord('s'):
 		x = x  - 10	
 	if k == ord('r'):
 		r = r + 5
-        if k == 27:
-            break
+    if k == 27:
+        break
 	
