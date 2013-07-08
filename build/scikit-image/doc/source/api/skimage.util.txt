@@ -1,0 +1,52 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+Module: :mod:`util`
+===================
+.. automodule:: skimage.util
+
+.. currentmodule:: skimage.util
+.. autosummary::
+
+   skimage.util.img_as_bool
+   skimage.util.img_as_float
+   skimage.util.img_as_int
+   skimage.util.img_as_ubyte
+   skimage.util.img_as_uint
+   skimage.util.view_as_blocks
+   skimage.util.view_as_windows
+
+img_as_bool
+-----------
+
+.. autofunction:: skimage.util.img_as_bool
+
+img_as_float
+------------
+
+.. autofunction:: skimage.util.img_as_float
+
+img_as_int
+----------
+
+.. autofunction:: skimage.util.img_as_int
+
+img_as_ubyte
+------------
+
+.. autofunction:: skimage.util.img_as_ubyte
+
+img_as_uint
+-----------
+
+.. autofunction:: skimage.util.img_as_uint
+
+view_as_blocks
+--------------
+
+.. autofunction:: skimage.util.view_as_blocks
+
+view_as_windows
+---------------
+
+.. autofunction:: skimage.util.view_as_windows
+

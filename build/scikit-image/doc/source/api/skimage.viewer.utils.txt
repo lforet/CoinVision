@@ -1,0 +1,72 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+Module: :mod:`viewer.utils`
+===========================
+.. automodule:: skimage.viewer.utils
+
+.. currentmodule:: skimage.viewer.utils
+
+:class:`ClearColormap`
+----------------------
+
+
+.. autoclass:: ClearColormap
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+  .. automethod:: __init__
+
+:class:`LinearColormap`
+-----------------------
+
+
+.. autoclass:: LinearColormap
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+  .. automethod:: __init__
+
+:class:`MatplotlibCanvas`
+-------------------------
+
+
+.. autoclass:: MatplotlibCanvas
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+  .. automethod:: __init__
+
+:class:`RequiredAttr`
+---------------------
+
+
+.. autoclass:: RequiredAttr
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+  .. automethod:: __init__
+.. autosummary::
+
+   skimage.viewer.utils.figimage
+   skimage.viewer.utils.init_qtapp
+   skimage.viewer.utils.start_qtapp
+
+figimage
+--------
+
+.. autofunction:: skimage.viewer.utils.figimage
+
+init_qtapp
+----------
+
+.. autofunction:: skimage.viewer.utils.init_qtapp
+
+start_qtapp
+-----------
+
+.. autofunction:: skimage.viewer.utils.start_qtapp
+

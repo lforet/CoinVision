@@ -30,8 +30,8 @@ FLANN_INDEX_LSH    = 6
 def compare_images(img1, img2):
     # normalize to compensate for exposure difference, this may be unnecessary
     # consider disabling it
-    img1 = normalize(img1)
-    img2 = normalize(img2)
+    #img1 = normalize(img1)
+    #img2 = normalize(img2)
     # calculate the difference and its norms
     diff = img1 - img2  # elementwise for scipy arrays
     m_norm = sum(abs(diff))  # Manhattan norm
@@ -682,29 +682,32 @@ def find_center_of_coin(img):
 	for minRadius in range (110, 190, 10):
 		#img_copy = cv.CloneImage(img_copy2)
 		#for maxRadius in range ((img.height/2)+50, img.height, 10):
-		for maxRadius in range (190, 280, 10):
-			#time.sleep(.01)
-			#print "minRadius: ", minRadius, " maxRadius: ", maxRadius
-			circles = cv.HoughCircles(edges, storage, cv.CV_HOUGH_GRADIENT, 1, img.height, canny, param2, minRadius, maxRadius)
+		for maxRadius in range (200, 280, 10):
+			try:
+				time.sleep(.5)
+				print "minRadius: ", minRadius, " maxRadius: ", maxRadius
+				circles = cv.HoughCircles(edges, storage, cv.CV_HOUGH_GRADIENT, 1, img.height, canny, param2, minRadius, maxRadius)
 	
-			if storage.rows > 0:
-				for i in range(0, storage.rows):
-					#print "Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], " minRadius: ", minRadius, " maxRadius: ", maxRadius
-					cv.WaitKey(5)
-					#time.sleep(.01)
-					center = int(np.asarray(storage)[i][0][0]), int(np.asarray(storage)[i][0][1])
-					radius = int(np.asarray(storage)[i][0][2])
-					#print center, radius
-					if visual == True:
-						time.sleep(.05)
-						cv.Circle(img_copy, center, radius, cv.CV_RGB(255, 0, 0), 1, cv.CV_AA, 0 )
-						cv.Circle(img_copy, center, 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
-						cv.ShowImage("Center of Coin", img_copy)
-						cv.MoveWindow ('Center of Coin', 50 , (50 + (1 * (cv.GetSize(img_copy)[0]))))
-					if (radius > best_circle[1]) & (radius > 150) & (radius < img.height/1.5):
-						best_circle = (center, radius)
+				if storage.rows > 0:
+					for i in range(0, storage.rows):
+						#print "Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], " minRadius: ", minRadius, " maxRadius: ", maxRadius
+						#cv.WaitKey(5)
+						#time.sleep(.01)
+						center = int(np.asarray(storage)[i][0][0]), int(np.asarray(storage)[i][0][1])
+						radius = int(np.asarray(storage)[i][0][2])
+						#print center, radius
 						if visual == True:
-							print "Found Best Circle---Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], " minRadius: ", minRadius, " maxRadius: ", maxRadius
+							time.sleep(.05)
+							cv.Circle(img_copy, center, radius, cv.CV_RGB(255, 0, 0), 1, cv.CV_AA, 0 )
+							cv.Circle(img_copy, center, 5, cv.CV_RGB(255, 0, 0), -1, cv.CV_AA, 0 )
+							cv.ShowImage("Center of Coin", img_copy)
+							cv.MoveWindow ('Center of Coin', 50 , (50 + (1 * (cv.GetSize(img_copy)[0]))))
+						if (radius > best_circle[1]) & (radius > 150) & (radius < img.height/1.5):
+							best_circle = (center, radius)
+							if visual == True:
+								print "Found Best Circle---Center: X:", best_circle[0][0], " Y: ", best_circle[0][1], " Radius: ", best_circle[1], " minRadius: ", minRadius, " maxRadius: ", maxRadius
+			except:
+				pass
 	if visual == True:
 		print "Finding centers completed..Press any key"
 		cv.WaitKey()

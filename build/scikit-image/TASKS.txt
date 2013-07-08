@@ -1,0 +1,29 @@
+ ..  role:: strike
+
+
+.. _howto_contribute:
+
+How to contribute to ``skimage``
+======================================
+
+.. toctree::
+   :hidden:
+
+   gitwash/index
+   gsoc2011
+   coverage_table
+   cell_profiler
+
+
+Developing Open Source is great fun!  Join us on the `skimage mailing
+list <http://groups.google.com/group/scikit-image>`_ and tell us which of the
+following challenges you'd like to solve.
+
+* Mentoring is available for those new to scientific programming in Python.
+* The technical detail of the `development process`_ is given below.
+* :doc:`How to use GitHub <gitwash/index>` when developing skimage
+* If you're looking something to implement, you can find a list of `requested features on github <https://github.com/scikit-image/scikit-image/wiki/Requested-features>`__. In addition, you can browse the `open issues on github <https://github.com/scikit-image/scikit-image/issues?state=open>`__.
+
+.. contents::
+   :local:
+

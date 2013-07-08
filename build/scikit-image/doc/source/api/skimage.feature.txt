@@ -1,0 +1,52 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+Module: :mod:`feature`
+======================
+.. automodule:: skimage.feature
+
+.. currentmodule:: skimage.feature
+.. autosummary::
+
+   skimage.feature.greycomatrix
+   skimage.feature.greycoprops
+   skimage.feature.harris
+   skimage.feature.hog
+   skimage.feature.local_binary_pattern
+   skimage.feature.match_template
+   skimage.feature.peak_local_max
+
+greycomatrix
+------------
+
+.. autofunction:: skimage.feature.greycomatrix
+
+greycoprops
+-----------
+
+.. autofunction:: skimage.feature.greycoprops
+
+harris
+------
+
+.. autofunction:: skimage.feature.harris
+
+hog
+---
+
+.. autofunction:: skimage.feature.hog
+
+local_binary_pattern
+--------------------
+
+.. autofunction:: skimage.feature.local_binary_pattern
+
+match_template
+--------------
+
+.. autofunction:: skimage.feature.match_template
+
+peak_local_max
+--------------
+
+.. autofunction:: skimage.feature.peak_local_max
+

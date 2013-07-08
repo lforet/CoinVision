@@ -1,0 +1,24 @@
+.. _example_plot_local_binary_pattern.py:
+
+
+===============================================
+Local Binary Pattern for texture classification
+===============================================
+
+In this example, we will see how to classify textures based on LBP (Local
+Binary Pattern). The histogram of the LBP result is a good measure to classify
+textures. For simplicity the histogram distributions are then tested against
+each other using the Kullback-Leibler-Divergence.
+
+.. image:: images/plot_local_binary_pattern_1.png
+    :align: center
+
+
+.. literalinclude:: plot_local_binary_pattern.py
+    :lines: 11-
+
+
+
+**Python source code:** :download:`download <plot_local_binary_pattern.py>`
+(generated using ``skimage`` |version|)
+

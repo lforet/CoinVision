@@ -1,0 +1,40 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+Module: :mod:`draw`
+===================
+.. automodule:: skimage.draw
+
+.. currentmodule:: skimage.draw
+.. autosummary::
+
+   skimage.draw.bresenham
+   skimage.draw.circle
+   skimage.draw.ellipse
+   skimage.draw.line
+   skimage.draw.polygon
+
+bresenham
+---------
+
+.. autofunction:: skimage.draw.bresenham
+
+circle
+------
+
+.. autofunction:: skimage.draw.circle
+
+ellipse
+-------
+
+.. autofunction:: skimage.draw.ellipse
+
+line
+----
+
+.. autofunction:: skimage.draw.line
+
+polygon
+-------
+
+.. autofunction:: skimage.draw.polygon
+
