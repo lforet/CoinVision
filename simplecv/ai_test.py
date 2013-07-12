@@ -3,6 +3,7 @@
 import os
 import glob
 from SimpleCV import *
+print SimpleCV.__version__
 
 """
 " Objective : experimenting object classification with SimpleCV
@@ -27,11 +28,13 @@ print '******* Machine Learning Experiments ********'
 
 
 # Training data set paths for classification(suppervised learnning)
-image_dirs = ['../../coin_images/jheads/temp',
-              '../../coin_images/jtails/temp'
+image_dirs = ['../../coin_images/jheads/',
+              '../../coin_images/jtails/',
+			  '../../coin_images/oheads/',
+              '../../coin_images/otails/',
               ]
 # Different class labels for multi class classification
-class_names = ['jhead','jtail']
+class_names = ['jhead','jtail','ohead', 'otail']
 
 more = 'yes'
 # [1] Representation - these feature extrators will extract features from image and represent it
@@ -72,6 +75,11 @@ try:
     classifier.train(image_dirs,class_names,savedata='train.txt')
 except:
 	pass
+
+classifier.save('ai.pkl')
+classifier = None
+classifier = NaiveBayesClassifier.load('ai.pkl')
+
 raw_input('press enter to continue : ')
 # Test data set paths
 # here the 1-5 images are football images

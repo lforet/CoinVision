@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-#!/usr/bin/python
-
 import sys
 sys.path.append( "../lib/" )
 
@@ -13,7 +10,7 @@ import math
 import mahotas
 from mahotas.features import surf
 import numpy as np
-import pickle
+import cPickle as pickle
 import csv
 import milk
 from threading import *
@@ -218,6 +215,42 @@ def template_matching(img_to_match, database_img):
 	x, y = ij[::-1]
 	print x,y
 	sys.exit(-1)
+
+
+def preprocess_houghlines (img, num_lines):
+
+	temp_img = cv2array(preprocess_img(img))
+	#print img, temp_img
+	USE_STANDARD = True
+	x = 140
+	if USE_STANDARD: x = 200
+
+	lines = np.array([[[]]])
+	while len(lines[0]) < num_lines:
+		try:
+			edges = cv2.Canny(temp_img, (int(x/2)), x , apertureSize=3)
+			if USE_STANDARD: 
+				lines = cv2.HoughLines(edges, 1, math.pi/180,num_lines)
+			else:
+				lines = cv2.HoughLinesP(edges, 1, math.pi/180, 40, None, 40, 10);
+			if lines == None: 
+				lines = np.array([[[]]])	
+			x = x -2
+		except:
+			x = x -2
+		#time.sleep(.05)
+	#cv2.imwrite("houghlines_canny.png", edges)
+		print "canny threshold: ", x , " Lines: ", len(lines[0])
+	cv2.imwrite("houghlines_canny_center_cropped.png",edges)
+	#temp_top_lines = lines[0][:num_lines]
+	#top_lines = []
+
+	coin_center = ( (int(edges.shape[0]/2),int(edges.shape[1]/2)), edges.shape[0])
+	cropped = cv2array(center_crop(array2cv(edges), coin_center, 40))
+	cv2.imwrite("houghlines_canny_center_cropped2.png",cropped)
+	return cropped
+
+
 
 
 	
@@ -512,7 +545,7 @@ def preprocess_img(img1):
 	#display =Thread(target=display_image, args=("cropped.png",.05,))
 	#display.daemon=True
 	#display.start()
-	print "Finshed preprocessing..."
+	print "Finished preprocessing..."
 	return cropped_coin_only
 	#return cropped
 
@@ -790,6 +823,7 @@ def process_all_images():
 		features360(img, step360=steps, averaging=False, classID=4)
 
 def train_ai():
+			print SimpleCV.__version__
 			data = []
 			classID = []
 			features = []
@@ -798,16 +832,71 @@ def train_ai():
 			#bows
 			feature_extractors = []
 			extractor_names = []
-			image_dirs = ['../coin_images/jheads/temp',
-						  '../coin_images/jtails/temp'
+			# Training data set paths for classification(suppervised learnning)
+			image_dirs = ['../coin_images/jheads/',
+						  '../coin_images/jtails/',
+						  '../coin_images/oheads/',
+						  '../coin_images/otails/',
 						  ]
 			# Different class labels for multi class classification
-			class_names = ['jhead','jtail']
+			class_names = ['jhead','jtail','ohead', 'otail']
+			
+			'''
+			#preprocess all training images
+			for directory in image_dirs:
+				for filename in glob.glob(directory + '/*.jpg'):
+					print "Processing:", filename
+					img = cv2.imread(filename)
+					temp_img  = preprocess_houghlines (img, 100)
+					temp_str = filename.rsplit('/')
+					temp_str = temp_str[len(temp_str)-1]
+					temp_str = directory + '/temp/' + temp_str
+					print temp_str
+					cv2.imwrite(temp_str, temp_img)
+					#raw_input('press enter to continue : ')
+			#sys.exit(-1)
+			'''
+			
+			#build array of directories for bow
+			#image_dirs2 = []
+			#for directory in image_dirs:
+			#	image_dirs2.append(directory + '/temp/')
+			#print image_dirs2
+
+			# Different class labels for multi class classification
+			extractor_name = 'hue'
 			if extractor_name == 'bow':
 				feature_extractor = BOFFeatureExtractor() # feature extrator for bag of words methodology
 				feature_extractor.generate(image_dirs,imgs_per_dir=40) # code book generation
+			elif extractor_name == 'hue':
+				feature_extractor = HueHistogramFeatureExtractor()
+			elif extractor_name == 'morphology':
+				feature_extractor = MorphologyFeatureExtractor()
+			elif extractor_name == 'haar':
+				feature_extractor = HaarLikeFeatureExtractor()
+			elif extractor_name == 'edge':
+				feature_extractor = EdgeHistogramFeatureExtractor()
+			image_dirs2 = image_dirs
+			#bow_features = BOFFeatureExtractor()
+			#bow_features.generate(image_dirs2,imgs_per_dir=40, verbose=True) # code book generation
+			#bow_features.generate(image_dirs2,imgs_per_dir=200,numcodes=256,sz=(11,11),img_layout=(16,16),padding=4 )
+			#bow_features.save('codebook.png','bow.txt')
+
+			#print "extractor_names:", extractor_names, feature_extractors
 			# initializing classifier with appropriate feature extractors list
-			#classifier_name = raw_input('Enter the classifier : ')
+			#print type(bow_features), bow_features, bow_features.getFieldNames(), bow_features.getNumFields()
+			#raw_input('bow saved...Enter : ')
+			#bow_features = None
+			
+			#bow_features = BOFFeatureExtractor()
+			#print type(bow_features), bow_features, bow_features.getFieldNames(), bow_features.getNumFields()
+			#bow_features.load('bow.txt')
+			#print type(bow_features), bow_features, bow_features.getFieldNames(), bow_features.getNumFields()
+			feature_extractors.append(feature_extractor)
+			#raw_input('bow loaded Enter : ')
+
+			#extractor_names.append(extractor_name)
+			
 			classifier_name = 'naive'
 			if classifier_name == 'naive':
 				classifier = NaiveBayesClassifier(feature_extractors)
@@ -817,14 +906,58 @@ def train_ai():
 				classifier = KNNClassifier(feature_extractors, 2)
 			elif classifier_name == 'tree':
 				classifier = TreeClassifier(feature_extractors)
+
 			# train the classifier to generate hypothesis function for classification
 			#print "image_dirs:", image_dirs, class_names
-			try:
-				classifier.train(image_dirs,class_names,savedata='features.txt')
-				pickle.dump( model, open( "coinvision_ai_model.mdl", "wb" ) )
-			except:
-				pass
+			classifier.train(image_dirs2,class_names,disp=None,savedata='features.txt',verbose=True)
+			
+			print 'classifier:', type(classifier), classifier
+			raw_input('press enter to continue :')
+			#pickle.dump( classifier, open( "coinvision_ai_model2.mdl", "wb" ),2 )
+			classifier.save('coinvision_ai_model.mdl')
+			print 'classifier:', type(classifier), classifier
+			classifier = NaiveBayesClassifier.load('coinvision_ai_model.mdl')
+
+			#raw_input('press enter to continue : let me try loading bow file')
+			#classifier2 = NaiveBayesClassifier.load('coinvision_ai_model.mdl')
+			#classifier2.setFeatureExtractors(feature_extractors)
+			#print 'classifier2:', type(classifier2), classifier2
+			#classifier.load("coinvision_ai_model.mdl")
+			#classifier2.load('coinvision_ai_model.mdl')
+			#print 'classifier:', type(classifier2), classifier2
 			raw_input('press enter to continue : ')
+			print 'testing ai:'
+			test_images_path = "../coin_images/unclassified"
+			extension = "*.jpg"
+
+			if not test_images_path:
+				path = os.getcwd() #get the current directory
+			else:
+				path = test_images_path
+
+			directory = os.path.join(path, extension)
+			files = glob.glob(directory)
+
+			count = 0 # counting the total number of training images
+			error = 0 # conuting the total number of misclassification by the trained classifier
+			for image_file in files:
+				new_image = Image(image_file)
+				category = classifier.classify(new_image)
+				print "image_file:", image_file + "     classified as: " + category
+				if image_file[-9] == 't':
+					if category == 'jhead' or category == 'ohead':
+						print "INCORRECT CLASSIFICATION"
+						error += 1
+				if image_file[-9] == 'h':
+					if category == 'jtail' or category == 'otail':
+						print "INCORRECT CLASSIFICATION"
+						error += 1
+				count += 1
+			# reporting the results
+			print ' * classifier : ', classifier
+			print ' * extractors :', extractor_names
+			print ' *', error, 'errors out of', count
+			raw_input('edned press enter to continue : ')
 			return
 
 		#try: 
