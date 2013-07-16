@@ -5,7 +5,7 @@ import numpy as np
 from PIL import ImageStat
 import mahotas
 import numpy as np
-import cv
+import cv2
 import matplotlib.pyplot as plt
 from multiprocessing import Process
 import time
@@ -195,7 +195,7 @@ def PIL2array(img):
 ###########################################################
 def array2PIL(arr, size):
     #mode = 'RGBA'
-	mode = "L"
+    mode = "L"
     arr = arr.reshape(arr.shape[0]*arr.shape[1], arr.shape[2])
     if len(arr[0]) == 3:
         arr = np.c_[arr, 255*np.ones((len(arr),1), np.uint8)]

@@ -4,7 +4,7 @@ sys.path.append( "../lib/" )
 import easygui as eg
 from img_processing_tools import *
 from PIL import ImageStat, Image, ImageDraw
-import cv, cv2 
+import cv, cv2
 import time
 import math
 import mahotas
@@ -20,9 +20,12 @@ from CoinServoDriver import *
 from coin_tools import *
 import glob
 import pylab
-from SimpleCV import *
+#from SimpleCV import *
 import itertools
 from skimage.feature import hog
+from skimage.feature import daisy
+#from skimage import data
+#import matplotlib.pyplot as plt
 from skimage import data, color, exposure
 from skimage.feature import match_template
 
@@ -450,8 +453,10 @@ def features360(img, preprocess=True, coin_center=None, step360=360, averaging=F
 		rotated_img = rotate_image(cropped_coin_only,x)
 		cropped = cv2array(center_crop(rotated_img, coin_center, 40))
 		cv2.imwrite("rotated.png", cropped)
-		
-		features = houghlines(cropped, 50)
+		print type(cropped)
+		features = find_features(cropped)
+
+		#features = houghlines(cropped, 50)
 		#raw_input("Press Enter to continue...")
 		#features = mahotas.features.haralick(cropped).mean(0)
 		#features = mahotas.features.tas(cropped)
@@ -571,7 +576,7 @@ def find_features(img):
 	#img = preprocess_img(img)
 	#features = houghlines(img, 20)
 	#features = features360_avg(img)
-	features = features360(img, preprocess=True, coin_center=None, step360=1, averaging=False, classID=0)
+	#features = features360(img, preprocess=True, coin_center=None, step360=1, averaging=False, classID=0)
 	#features = binary_compare(img)
 	#features = goodfeatures(img)
 	#print img, type(img)
@@ -604,7 +609,27 @@ def find_features(img):
 	#features = flatten(hu_moments)
 	#f2 = np.concatenate((f2,features))
 	#features = f2
-	print "All Features: ", features, len(features)
+
+
+	#DAISY
+	#gray scale the image if neccessary
+	if img.shape[2] != None:
+		img = img.mean(2)
+
+	img_step = int(img.shape[1]/4)
+	img_radius = int(img.shape[1]/10)
+	descs, descs_img = daisy(img, step=img_step, radius=img_radius, rings=2, histograms=8, orientations=8, normalization='l2', visualize=True)
+	features = descs.ravel()
+	#plt.axis('off')
+	#plt.imshow(descs_img)
+	#descs_num = descs.shape[0] * descs.shape[1]
+	#plt.title('%i DAISY descriptors extracted:' % descs_num)
+	#plt.show()
+	#print len(features.ravel())
+
+
+	#print len(features[0][0])
+	#print "All Features: ", features, len(features)
 	'''
 	#features_surf = surf.surf(np.mean(img,2))
 	#print "SURF:", features_surf, " len:", len(features_surf)
@@ -694,14 +719,13 @@ def predict_class_360(img, step360=360):
 	print "Coin only Center of Coin", coin_center
 	#sys.exit(-1)
 	classID_votes = [0,0,0,0]
-	model = pickle.load( open( "coinvision_ai_model.mdl", "rb" ) )
+	#model = pickle.load( open( "coinvision_ai_model.mdl", "rb" ) )
 	for x in xrange(0, 360, step360):
 		rotated_img = rotate_image(cropped_coin_only,x)
 		cropped = cv2array(center_crop(rotated_img, coin_center, 40))
 		cv2.imwrite("rotated.png", cropped)
-		features = features360(rotated_img, preprocess=False,coin_center=coin_center, step360=360, averaging=False, classID=0)
-		classID = 0
-		classID = classify(model, features)	
+		#features = features360(rotated_img, preprocess=False,coin_center=coin_center, step360=360, averaging=False, classID=0)
+		classID =  predict_class(cropped)
 		if classID == 1: answer = "Jefferson HEADS"
 		if classID == 2: answer = "Monticello TAILS"
 		if classID == 3: answer = "Other HEADS"
@@ -730,18 +754,30 @@ def predict_class_360(img, step360=360):
 
 def predict_class(img):
 	features = find_features(img)
-	'''
+	classID = 0
+
 	from sklearn import svm
-	model = pickle.load( open( "coinvision_ai_model_svc.mdl", "rb" ) )
-	print model.predict(features)
+	model_svm = pickle.load( open( "coinvision_ai_model_svc.mdl", "rb" ) )
+	classID_svm = model_svm.predict(features)
+	print "SVM predicted classID:", classID_svm
+	#print "SVM predicted prob:", model_svm.predict_proba(features)
 
 	from sklearn.neighbors import KNeighborsClassifier
-	#neigh = KNeighborsClassifier(n_neighbors=3)
-	neigh= pickle.load( open( "coinvision_ai_model_knn.mdl", "rb" ) )
-	print neigh.predict(features)
-	#print neigh.predict_proba(1)
-	'''
-	classID = 0
+	neigh = KNeighborsClassifier(n_neighbors=3)
+	neigh = pickle.load( open( "coinvision_ai_model_knn.mdl", "rb" ) )
+	print "KNN predicted classID:", neigh.predict(features)
+	print "KNN predicted prob:", neigh.predict_proba(features)
+	
+	from sklearn.svm import LinearSVC
+	clf = LinearSVC()
+	clf = pickle.load( open( "coinvision_ai_model_lr.mdl", "rb" ) )
+	print "LR predicted classID:", clf.predict(features)
+	#print "lr predicted prob:", clf.predict_proba(features)
+
+	from sklearn.linear_model import LogisticRegression
+	clf2 = pickle.load(open( "coinvision_ai_model_clf2.mdl", "rb" ) )
+	print "LR2 predicted classID:",clf2.predict(features)
+	print "LR2 predicted prob:", clf2.predict_proba(features)
 #try:
 	model = pickle.load( open( "coinvision_ai_model.mdl", "rb" ) )
 	classID = classify(model, features)	
@@ -752,7 +788,7 @@ def predict_class(img):
 	if classID == 4: answer = "Other TAILS"
 	print "predicted classID:", answer
 	#eg.msgbox("predicted classID:"+answer)
-	return classID
+	return classID_svm
 #except:
 	print "could not predict...bad data"
 
@@ -786,7 +822,7 @@ def save_data(features, classID):
 def process_all_images():
 	path = "../coin_images/"
 	#print path+'jheads/*.jpg'
-	steps = 10
+	steps = 360
 	for name in glob.glob(path+'jheads/*.jpg'):
 		classID = "1"
 		print name
@@ -823,12 +859,14 @@ def process_all_images():
 		features360(img, step360=steps, averaging=False, classID=4)
 
 def train_ai():
-			print SimpleCV.__version__
+			
 			data = []
 			classID = []
 			features = []
 			features_temp_array = []
-
+			
+			'''
+			#SIMPLECV
 			#bows
 			feature_extractors = []
 			extractor_names = []
@@ -841,7 +879,7 @@ def train_ai():
 			# Different class labels for multi class classification
 			class_names = ['jhead','jtail','ohead', 'otail']
 			
-			'''
+			
 			#preprocess all training images
 			for directory in image_dirs:
 				for filename in glob.glob(directory + '/*.jpg'):
@@ -855,7 +893,7 @@ def train_ai():
 					cv2.imwrite(temp_str, temp_img)
 					#raw_input('press enter to continue : ')
 			#sys.exit(-1)
-			'''
+			
 			
 			#build array of directories for bow
 			#image_dirs2 = []
@@ -959,7 +997,7 @@ def train_ai():
 			print ' *', error, 'errors out of', count
 			raw_input('edned press enter to continue : ')
 			return
-
+			'''
 		#try: 
 			data_filename = 'coinvision_feature_data.csv'
 			print 'reading features and classID: ', data_filename
@@ -988,23 +1026,35 @@ def train_ai():
 			#make numpy arrays
 			features = np.asarray(features)
 			#print classID, features 
+
+			
 			learner = milk.defaultclassifier(mode='really-slow')
 			model = learner.train(features, classID)
 			pickle.dump( model, open( "coinvision_ai_model.mdl", "wb" ) )
+			
 
 		#except:
 			print "could not retrain.. bad file"
-			'''
+			
 			from sklearn import svm
 			model = svm.SVC(gamma=0.001, C=100.)
 			model.fit(features, classID)
 			pickle.dump( model, open( "coinvision_ai_model_svc.mdl", "wb" ) )
-
+			
 			from sklearn.neighbors import KNeighborsClassifier
 			neigh = KNeighborsClassifier(n_neighbors=3)
 			neigh.fit(features, classID)
-			pickle.dump( model, open( "coinvision_ai_model_knn.mdl", "wb" ) )
-			'''
+			pickle.dump( neigh, open( "coinvision_ai_model_knn.mdl", "wb" ) )
+			
+			from sklearn.svm import LinearSVC
+			clf = LinearSVC()
+			clf = clf.fit(features, classID)
+			pickle.dump( clf, open( "coinvision_ai_model_lr.mdl", "wb" ) )
+			
+			from sklearn.linear_model import LogisticRegression
+			clf2 = LogisticRegression().fit(features, classID)
+			pickle.dump( clf2 , open( "coinvision_ai_model_clf2.mdl", "wb" ) )
+		
 			return 
 
 def sift():
@@ -1373,7 +1423,7 @@ if __name__=="__main__":
 			img1 = cv2.imread('temp.png')
 			#img1 = preprocess_img(img1)
 			#cv2.imwrite('postprocessed_img.png', img1)
-			#predict_class(img1)
+			#predicted_classID = predict_class(img1)
 			predicted_classID = predict_class_360(img1, step360=10)
 			if predicted_classID == 1: answer = "Jefferson HEADS"
 			if predicted_classID == 2: answer = "Monticello TAILS"

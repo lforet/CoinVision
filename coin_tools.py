@@ -6,8 +6,7 @@ import ImageStat
 import ImageFilter
 import math, operator
 import sys
-import cv
-import cv2
+import cv, cv2
 import Image
 import numpy as np
 import scipy.spatial

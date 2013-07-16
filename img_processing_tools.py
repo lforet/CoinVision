@@ -5,7 +5,7 @@ import numpy as np
 from PIL import ImageStat
 import mahotas
 import numpy as np
-import cv
+import cv, cv2
 import matplotlib.pyplot as plt
 from multiprocessing import Process
 import time

@@ -4,6 +4,7 @@ DEVELOPMENT.txt
 LICENSE.txt
 MANIFEST.in
 Makefile
+README.rst
 RELEASE.txt
 TASKS.txt
 setup.cfg

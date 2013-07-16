@@ -6,7 +6,6 @@ import ImageStat
 import ImageFilter
 import math, operator
 import sys
-import cv
 import cv2
 import Image
 import numpy as np
@@ -684,8 +683,8 @@ def find_center_of_coin(img):
 		#for maxRadius in range ((img.height/2)+50, img.height, 10):
 		for maxRadius in range (200, 280, 10):
 			try:
-				time.sleep(.5)
-				print "minRadius: ", minRadius, " maxRadius: ", maxRadius
+				#time.sleep(.5)
+				#print "minRadius: ", minRadius, " maxRadius: ", maxRadius
 				circles = cv.HoughCircles(edges, storage, cv.CV_HOUGH_GRADIENT, 1, img.height, canny, param2, minRadius, maxRadius)
 	
 				if storage.rows > 0:
