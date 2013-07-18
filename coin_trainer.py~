@@ -35,13 +35,15 @@ import scipy.ndimage
 from numpy.ma.core import exp
 from scipy.constants.constants import pi
 
+import serial 
 
 #import matplotlib.pyplot as plt
-
+VIDEO_CAM = 0
+CROP_SIZE = 45
 
 def get_new_coin(servo, dc_motor):
 	servo.arm_down()
-	base_frame = snap_shot(1)
+	base_frame = snap_shot(VIDEO_CAM )
 	#time.sleep(1)
 	new_coin = False
 	print 'CoinID Motor Driver Comm OPEN:', dc_motor.isOpen()
@@ -53,7 +55,7 @@ def get_new_coin(servo, dc_motor):
 		if new_coin == False: time.sleep(.5)
 		motor_stop(dc_motor)
 		if new_coin == False: time.sleep(.8)
-		frame = snap_shot(1)
+		frame = snap_shot(VIDEO_CAM)
 		pilimg2 = CVtoPIL(CVtoGray(frame))
 		rms_dif = rmsdiff(pilimg1, pilimg2)
 		print "RMS Dif:", rms_dif 
@@ -208,8 +210,8 @@ def template_matching(img_to_match, database_img):
 	print "Coin only Center of img_to_match_cropped_coin_only:", img_to_match_coin_center
 	database_img_coin_center = find_center_of_coin(database_img_cropped_coin_only)
 	print "Coin only Center of database_img_cropped_coin_only:",database_img_coin_center
-	img_to_match_final_cropped = cv2array(center_crop(img_to_match_cropped_coin_only, img_to_match_coin_center, 40))
-	database_img_final_cropped = cv2array(center_crop(database_img_cropped_coin_only, database_img_coin_center, 40))
+	img_to_match_final_cropped = cv2array(center_crop(img_to_match_cropped_coin_only, img_to_match_coin_center, CROP_SIZE))
+	database_img_final_cropped = cv2array(center_crop(database_img_cropped_coin_only, database_img_coin_center, CROP_SIZE))
 
 
 
@@ -249,7 +251,7 @@ def preprocess_houghlines (img, num_lines):
 	#top_lines = []
 
 	coin_center = ( (int(edges.shape[0]/2),int(edges.shape[1]/2)), edges.shape[0])
-	cropped = cv2array(center_crop(array2cv(edges), coin_center, 40))
+	cropped = cv2array(center_crop(array2cv(edges), coin_center, CROP_SIZE))
 	cv2.imwrite("houghlines_canny_center_cropped2.png",cropped)
 	return cropped
 
@@ -451,23 +453,11 @@ def features360(img, preprocess=True, coin_center=None, step360=360, averaging=F
 	totals_array = []
 	for x in xrange(0, 360, step360):
 		rotated_img = rotate_image(cropped_coin_only,x)
-		cropped = cv2array(center_crop(rotated_img, coin_center, 40))
+		cropped = cv2array(center_crop(rotated_img, coin_center, CROP_SIZE))
 		cv2.imwrite("rotated.png", cropped)
 		print type(cropped)
 		features = find_features(cropped)
 
-		#features = houghlines(cropped, 50)
-		#raw_input("Press Enter to continue...")
-		#features = mahotas.features.haralick(cropped).mean(0)
-		#features = mahotas.features.tas(cropped)
-		#hog
-		#cropped = cropped.reshape(240,240)
-		#features = hog(cropped, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(3,3), visualise=False, normalise=True)
-		#hogimage = hogimage.reshape(240,240,1)
-		#features = mahotas.features.lbp(cropped, 1, 8)
-		#features = cropped.flatten()
-		#print len(features)
-		#time.sleep(5)
 		print "Degree:", x#, "   Totals:", features
 		features_to_return = []	
 		if averaging == False:	
@@ -620,6 +610,8 @@ def find_features(img):
 	img_radius = int(img.shape[1]/10)
 	descs, descs_img = daisy(img, step=img_step, radius=img_radius, rings=2, histograms=8, orientations=8, normalization='l2', visualize=True)
 	features = descs.ravel()
+	print type(descs_img), type(array2cv(descs_img))
+	cv2.imwrite("descs_img.png", cv2array(array2cv(descs_img)))
 	#plt.axis('off')
 	#plt.imshow(descs_img)
 	#descs_num = descs.shape[0] * descs.shape[1]
@@ -722,7 +714,7 @@ def predict_class_360(img, step360=360):
 	#model = pickle.load( open( "coinvision_ai_model.mdl", "rb" ) )
 	for x in xrange(0, 360, step360):
 		rotated_img = rotate_image(cropped_coin_only,x)
-		cropped = cv2array(center_crop(rotated_img, coin_center, 40))
+		cropped = cv2array(center_crop(rotated_img, coin_center, CROP_SIZE))
 		cv2.imwrite("rotated.png", cropped)
 		#features = features360(rotated_img, preprocess=False,coin_center=coin_center, step360=360, averaging=False, classID=0)
 		classID =  predict_class(cropped)
@@ -756,39 +748,42 @@ def predict_class(img):
 	features = find_features(img)
 	classID = 0
 
-	from sklearn import svm
-	model_svm = pickle.load( open( "coinvision_ai_model_svc.mdl", "rb" ) )
-	classID_svm = model_svm.predict(features)
-	print "SVM predicted classID:", classID_svm
+	#from sklearn import svm
+	#model_svm = pickle.load( open( "coinvision_ai_model_svc.mdl", "rb" ) )
+	#classID_svm = model_svm.predict(features)
+	#print "SVM predicted classID:", classID_svm
 	#print "SVM predicted prob:", model_svm.predict_proba(features)
 
-	from sklearn.neighbors import KNeighborsClassifier
-	neigh = KNeighborsClassifier(n_neighbors=3)
-	neigh = pickle.load( open( "coinvision_ai_model_knn.mdl", "rb" ) )
-	print "KNN predicted classID:", neigh.predict(features)
-	print "KNN predicted prob:", neigh.predict_proba(features)
+	#from sklearn.neighbors import KNeighborsClassifier
+	#KNN_clf = KNeighborsClassifier(n_neighbors=3)
+	#KNN_clf = pickle.load( open( "coinvision_ai_model_knn.mdl", "rb" ) )
+	#KNN_classID = KNN_clf.predict(features)
+	#print "KNN predicted classID:", KNN_classID 
+	#print "KNN predicted prob:", KNN_clf.predict_proba(features)
 	
 	from sklearn.svm import LinearSVC
-	clf = LinearSVC()
-	clf = pickle.load( open( "coinvision_ai_model_lr.mdl", "rb" ) )
-	print "LR predicted classID:", clf.predict(features)
-	#print "lr predicted prob:", clf.predict_proba(features)
+	LinearSVC_clf = LinearSVC()
+	LinearSVC_clf = pickle.load( open( "coinvision_ai_model_lr.mdl", "rb" ) )
+	LinearSVC_class = LinearSVC_clf.predict(features)
+	print "LinearSVC_clf predicted classID:", LinearSVC_class
+	#print "LinearSVC predicted prob:", LinearSVC_clf.predict_proba(features)
 
-	from sklearn.linear_model import LogisticRegression
-	clf2 = pickle.load(open( "coinvision_ai_model_clf2.mdl", "rb" ) )
-	print "LR2 predicted classID:",clf2.predict(features)
-	print "LR2 predicted prob:", clf2.predict_proba(features)
+	#from sklearn.linear_model import LogisticRegression
+	#clf2 = pickle.load(open( "coinvision_ai_model_clf2.mdl", "rb" ) )
+	#print "LR2 predicted classID:",clf2.predict(features)
+	#print "LR2 predicted prob:", clf2.predict_proba(features)
 #try:
-	model = pickle.load( open( "coinvision_ai_model.mdl", "rb" ) )
-	classID = classify(model, features)	
-	print "classID: = ", classID
+	#model = pickle.load( open( "coinvision_ai_model.mdl", "rb" ) )
+	#classID = classify(model, features)
+	classID = LinearSVC_class	
+	#print "classID: = ", classID
 	if classID == 1: answer = "Jefferson HEADS"
 	if classID == 2: answer = "Monticello TAILS"
 	if classID == 3: answer = "Other HEADS"
 	if classID == 4: answer = "Other TAILS"
 	print "predicted classID:", answer
 	#eg.msgbox("predicted classID:"+answer)
-	return classID_svm
+	return classID
 #except:
 	print "could not predict...bad data"
 
@@ -822,7 +817,7 @@ def save_data(features, classID):
 def process_all_images():
 	path = "../coin_images/"
 	#print path+'jheads/*.jpg'
-	steps = 360
+	steps = 30
 	for name in glob.glob(path+'jheads/*.jpg'):
 		classID = "1"
 		print name
@@ -1180,6 +1175,47 @@ def subsection_image(pil_img, sections, visual):
 
 #def get_scores(candidate_img, img, classid, x)
 
+def test():
+	print 'testing ai:'
+	test_images_path = "../coin_images/unclassified"
+	extension = "*.jpg"
+
+	if not test_images_path:
+		path = os.getcwd() #get the current directory
+	else:
+		path = test_images_path
+
+	directory = os.path.join(path, extension)
+	files = glob.glob(directory)
+
+	count = 0 # counting the total number of training images
+	error = 0 # conuting the total number of misclassification by the trained classifier
+	for image_file in files:
+		img = cv2.imread(image_file)
+		predicted_classID = predict_class_360(img, step360=360)
+		category = ""
+		if predicted_classID == 1: category = "Jefferson HEADS"
+		if predicted_classID == 2: category = "Monticello TAILS"
+		if predicted_classID == 3: category = "Other HEADS"
+		if predicted_classID == 4: category = "Other TAILS"
+		print "------------------------------------------"
+		print "image_file:", image_file + "     classified as: " + category
+		#if image_file[-9] == 't':
+		#	if predicted_classID  == '1' or predicted_classID == '3':
+		#		print "INCORRECT CLASSIFICATION"
+		#		error += 1
+		#if image_file[-9] == 'h':
+		#	if predicted_classID  == '2' or predicted_classID == '4':
+		#		print "INCORRECT CLASSIFICATION"
+		#		error += 1
+		#count += 1
+	# reporting the results
+	#print ' * classifier : ', classifier
+	#print ' * extractors :', extractor_names
+		#print ' *', error, 'errors out of', count
+		raw_input('press enter to continue: ')
+
+
 def compare_rms(img_to_classify):
 	path = "../coin_images/"
 	rms_classID = 0
@@ -1326,14 +1362,15 @@ def compare_rms(img_to_classify):
 if __name__=="__main__":
 	ready_to_display = False
  	
-	try:
-		dc_motor = serial.Serial(port='/dev/ttyACM2', baudrate=9600, timeout=1)
-		time.sleep(1)
-		coinid_servo = CoinServoDriver()
-		time.sleep(1)
+	#try:
+	dc_motor = serial.Serial(port='/dev/ttyACM2', baudrate=9600, timeout=1)
+
+	#time.sleep(1)
+	coinid_servo = CoinServoDriver()
+	#time.sleep(1)
 	#dc_motor.close()
-	except:
-		print "no hardware (WEBCAM) attached"
+	#except:
+	#print "no hardware (WEBCAM) attached"
 		#sys.exit(-1)
 
 	#get_new_coin(coinid_servo, dc_motor)
@@ -1413,10 +1450,11 @@ if __name__=="__main__":
 			print "Quitting...."
 			sys.exit(-1)
 
-		if reply == "RMS":
+		if reply == "TEST":
 			#sift()
-			img_to_classify = cv2.imread('temp.png')
-			compare_rms(img_to_classify)
+			test()
+			#img_to_classify = cv2.imread('temp.png')
+			#compare_rms(img_to_classify)
 
 		if reply == "Predict":
 			print "AI predicting"
@@ -1424,7 +1462,7 @@ if __name__=="__main__":
 			#img1 = preprocess_img(img1)
 			#cv2.imwrite('postprocessed_img.png', img1)
 			#predicted_classID = predict_class(img1)
-			predicted_classID = predict_class_360(img1, step360=60)
+			predicted_classID = predict_class_360(img1, step360=15)
 			if predicted_classID == 1: answer = "Jefferson HEADS"
 			if predicted_classID == 2: answer = "Monticello TAILS"
 			if predicted_classID == 3: answer = "Other HEADS"
@@ -1444,7 +1482,8 @@ if __name__=="__main__":
 			#img = mahotas.imread('temp.png', as_grey=True)
 			img1 = cv2.imread('temp.png')
 			#img1 = preprocess_img(img1)
-			find_features(img1)
+			#find_features(img1)
+			features360(img1, preprocess=True, coin_center=None, step360=360, averaging=False, classID=0)
 			ready_to_display = True
 
 
@@ -1460,12 +1499,12 @@ if __name__=="__main__":
 			#time.sleep(.2)
 			print "Acquiring new image.."
 			if video != None: 
-				img1 = np.array(grab_frame_from_video(video)[1])
+				img1 = np.array(grab_frame_from_video(video)[VIDEO_CAM])
+				print "test"
 			else:
 				get_new_coin(coinid_servo, dc_motor)
 				time.sleep(.5)
-				img1 = cv2array(snap_shot(1))
-			#print img1
+				img1 = cv2array(snap_shot(VIDEO_CAM))
 			#img1 = preprocess_img(img1)
 			cv2.imwrite('temp.png', img1)
 			#img1 = array2image(img1)
@@ -1487,7 +1526,7 @@ if __name__=="__main__":
 			f_handle.write('')
 			f_handle.close()
 		try:
-			reply =	eg.buttonbox(msg='Coin Trainer', title='Coin Trainer', choices=('RMS', 'JHEAD', 'JTAIL', 'OHEAD', 'OTAIL', 'Test Img', 'Next Coin', 'Predict', 'Features','Process Imgs', 'Retrain AI' , 'Del AI File', 'Quit'), image='temp.png', root=None)
+			reply =	eg.buttonbox(msg='Coin Trainer', title='Coin Trainer', choices=('TEST', 'JHEAD', 'JTAIL', 'OHEAD', 'OTAIL', 'Test Img', 'Next Coin', 'Predict', 'Features','Process Imgs', 'Retrain AI' , 'Del AI File', 'Quit'), image='temp.png', root=None)
 		except:
 			pass
 
