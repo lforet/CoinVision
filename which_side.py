@@ -87,7 +87,7 @@ def motor_stop(dc_motor):
 
 
 #######################   Globals
-sample_size = 60
+sample_size = 65
 
 
 if __name__=="__main__":
@@ -181,6 +181,9 @@ if __name__=="__main__":
 	cv.MoveWindow ('Crop Center of Scaled Coin1', 100, 100)
 	cv.ShowImage("Crop Center of Coin2", coin2_center_crop)
 	cv.MoveWindow ('Crop Center of Coin2', 100, (125 + (cv.GetSize(coin2_center_crop)[0])) )
+	
+
+	### This Section determines what side of coin
 	
 	#print "before compare"
 	#cv.WaitKey()

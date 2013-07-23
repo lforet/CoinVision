@@ -659,6 +659,7 @@ def rotate_image(img, degrees):
 ###########################################################
 #expects gray scale image array type
 def find_center_of_coin(img):
+	precision = 10 #less is more precise
 	#create storage fo circle data
 	storage = cv.CreateMat(50, 1, cv.CV_32FC3)
 	#storage = cv.CreateMemStorage(0)
@@ -678,10 +679,10 @@ def find_center_of_coin(img):
 	#minRadius = 100; maxRadius = 260
 	canny = 150; param2 = 8;
 	#for minRadius in range ((img.height/4), (img.height/2), 10):
-	for minRadius in range (110, 190, 10):
+	for minRadius in range (110, 190, precision):
 		#img_copy = cv.CloneImage(img_copy2)
 		#for maxRadius in range ((img.height/2)+50, img.height, 10):
-		for maxRadius in range (200, 280, 10):
+		for maxRadius in range (200, 280, precision):
 			try:
 				#time.sleep(.5)
 				#print "minRadius: ", minRadius, " maxRadius: ", maxRadius
@@ -779,7 +780,7 @@ def correct_scale(img1, img2, coin1_center, coin2_center):
 def get_orientation_sobel(img1, img2, sample_size):
 	print "Get Orientation Sobel"
 	# rotate img1 the degrees returned by this function to match img2
-	x = 120 #canny param
+	x = 150 #canny param
 	sample_size = sample_size - 15
 	# make copies
 	img1_copy = cv.CloneImage(img1)
@@ -796,7 +797,8 @@ def get_orientation_sobel(img1, img2, sample_size):
 	cv.Smooth(img2_copy , img2_copy, cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(img2_copy , img2_copy  ,cv.Round((x/2)),x, 3)
 	sobel_img2_copy = cv.CreateImage(cv.GetSize(img2_copy), cv.IPL_DEPTH_16S,1)
-	cv.Sobel(img2_copy, sobel_img2_copy, 1 , 1 )
+	#cv.Sobel(img2_copy, sobel_img2_copy, 1 , 1 )
+	cv.Laplace(img2_copy, sobel_img2_copy,3)
 	cv.ConvertScaleAbs(sobel_img2_copy, img2_copy, 1, 1)
 	center = ([(img2_copy.width/2),(img2_copy.height/2)], sample_size)
 	img2_copy =  center_crop(img2_copy, center, sample_size)
