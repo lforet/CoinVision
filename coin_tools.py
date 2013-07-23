@@ -657,7 +657,7 @@ def rotate_image(img, degrees):
 
 
 ###########################################################
-
+#expects gray scale image array type
 def find_center_of_coin(img):
 	#create storage fo circle data
 	storage = cv.CreateMat(50, 1, cv.CV_32FC3)

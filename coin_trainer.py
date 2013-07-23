@@ -40,6 +40,7 @@ import serial
 #import matplotlib.pyplot as plt
 VIDEO_CAM = 0
 CROP_SIZE = 45
+MOTOR_POWER = 25
 
 def get_new_coin(servo, dc_motor):
 	servo.arm_down()
@@ -51,10 +52,10 @@ def get_new_coin(servo, dc_motor):
 	pilimg1 = CVtoPIL(CVtoGray(base_frame))
 	print "pilimg1 = ", pilimg1
 	while not new_coin:
-		if new_coin == False: move_motor(dc_motor, "F", 20)
-		if new_coin == False: time.sleep(.5)
+		if new_coin == False: move_motor(dc_motor, "F", MOTOR_POWER)
+		if new_coin == False: time.sleep(.6)
 		motor_stop(dc_motor)
-		if new_coin == False: time.sleep(.8)
+		if new_coin == False: time.sleep(.9)
 		frame = snap_shot(VIDEO_CAM)
 		pilimg2 = CVtoPIL(CVtoGray(frame))
 		rms_dif = rmsdiff(pilimg1, pilimg2)
@@ -223,17 +224,19 @@ def template_matching(img_to_match, database_img):
 
 
 def preprocess_houghlines (img, num_lines):
-
-	temp_img = cv2array(preprocess_img(img))
+	temp_img = img
 	#print img, temp_img
+	#sys.exit(-1)
 	USE_STANDARD = True
 	x = 140
-	if USE_STANDARD: x = 200
+	if USE_STANDARD: x = 280
 
 	lines = np.array([[[]]])
 	while len(lines[0]) < num_lines:
 		try:
 			edges = cv2.Canny(temp_img, (int(x/2)), x , apertureSize=3)
+			#time.sleep(.5)
+			#cv2.imwrite("houghlines_canny.png", edges)
 			if USE_STANDARD: 
 				lines = cv2.HoughLines(edges, 1, math.pi/180,num_lines)
 			else:
@@ -243,17 +246,16 @@ def preprocess_houghlines (img, num_lines):
 			x = x -2
 		except:
 			x = x -2
-		#time.sleep(.05)
-	#cv2.imwrite("houghlines_canny.png", edges)
+
 		print "canny threshold: ", x , " Lines: ", len(lines[0])
 	cv2.imwrite("houghlines_canny_center_cropped.png",edges)
 	#temp_top_lines = lines[0][:num_lines]
 	#top_lines = []
 
-	coin_center = ( (int(edges.shape[0]/2),int(edges.shape[1]/2)), edges.shape[0])
-	cropped = cv2array(center_crop(array2cv(edges), coin_center, CROP_SIZE))
-	cv2.imwrite("houghlines_canny_center_cropped2.png",cropped)
-	return cropped
+	#coin_center = ( (int(edges.shape[0]/2),int(edges.shape[1]/2)), edges.shape[0])
+	#cropped = cv2array(center_crop(array2cv(edges), coin_center, CROP_SIZE))
+	#cv2.imwrite("houghlines_canny_center_cropped2.png",cropped)
+	return edges
 
 
 
@@ -442,10 +444,16 @@ def houghlines(img, num_lines):
 
 
 def features360(img, preprocess=True, coin_center=None, step360=360, averaging=False, classID=0):
+	#print type(img)
 	if preprocess == True:
 		cropped_coin_only = preprocess_img(img)
 	else:
 		cropped_coin_only = img
+	print cropped_coin_only
+	
+	#if str(type(cropped_coin_only)) == "<type 'numpy.ndarray'>":
+	#		cropped_coin_only = array2cv(cropped_coin_only)
+	#print cropped_coin_only
 	if coin_center == None:
 		coin_center = find_center_of_coin(cropped_coin_only)
 		print "Coin only Center of Coin", coin_center
@@ -453,11 +461,13 @@ def features360(img, preprocess=True, coin_center=None, step360=360, averaging=F
 	totals_array = []
 	for x in xrange(0, 360, step360):
 		rotated_img = rotate_image(cropped_coin_only,x)
+		#print type(rotated_img)
+		cv2.imwrite("rotated.png", cv2array(rotated_img))
+		rotated_img = array2cv(preprocess_houghlines (cv2array(rotated_img), 80))
 		cropped = cv2array(center_crop(rotated_img, coin_center, CROP_SIZE))
-		cv2.imwrite("rotated.png", cropped)
-		print type(cropped)
+		cv2.imwrite("rotated_processed.png", cropped)
+		#raw_input("kkk")
 		features = find_features(cropped)
-
 		print "Degree:", x#, "   Totals:", features
 		features_to_return = []	
 		if averaging == False:	
@@ -525,17 +535,17 @@ def preprocess_img(img1):
 	z = 3
 	while True:
 		try:
-			diameter = 	int(coin_center[1]/z)
-			print "trying cropped coin diameter:",  diameter
+			diameter = int(coin_center[1]/z)
+			print "trying cropped coin diameter:", diameter
 			cropped_coin_only = center_crop(grey, coin_center, diameter)
 			break
 		except:
 			z = z + .1
-	print "Final cropped coin diameter: ",  diameter
+	print "Final cropped coin diameter: ", diameter
 	#cv2.imwrite("cropped_coin.png", cv2array(cropped_coin_only))
 
 	#########################################
-	#		Display Results
+	# Display Results
 	#######################
 	#display =Thread(target=display_image, args=("cropped.png",.05,))
 	#display.daemon=True
@@ -605,13 +615,13 @@ def find_features(img):
 	#gray scale the image if neccessary
 	if img.shape[2] != None:
 		img = img.mean(2)
-
 	img_step = int(img.shape[1]/4)
 	img_radius = int(img.shape[1]/10)
 	descs, descs_img = daisy(img, step=img_step, radius=img_radius, rings=2, histograms=8, orientations=8, normalization='l2', visualize=True)
 	features = descs.ravel()
 	print type(descs_img), type(array2cv(descs_img))
 	cv2.imwrite("descs_img.png", cv2array(array2cv(descs_img)))
+	#raw_input ("press enter")
 	#plt.axis('off')
 	#plt.imshow(descs_img)
 	#descs_num = descs.shape[0] * descs.shape[1]
@@ -716,6 +726,7 @@ def predict_class_360(img, step360=360):
 		rotated_img = rotate_image(cropped_coin_only,x)
 		cropped = cv2array(center_crop(rotated_img, coin_center, CROP_SIZE))
 		cv2.imwrite("rotated.png", cropped)
+
 		#features = features360(rotated_img, preprocess=False,coin_center=coin_center, step360=360, averaging=False, classID=0)
 		classID =  predict_class(cropped)
 		if classID == 1: answer = "Jefferson HEADS"
@@ -1413,21 +1424,21 @@ if __name__=="__main__":
 		if reply == "JHEAD":
 			img1 = cv2.imread('temp.png')
 			path = "../coin_images/jheads/"
-			filename = str(time.time()) + ".jpg"
+			filename = "jhead"+ str(time.time()) + ".jpg"
 			image_to_save = array2image(img1)
 			image_to_save.save(path+filename)	
 
 		if reply == "JTAIL":
 			img1 = cv2.imread('temp.png')
 			path = "../coin_images/jtails/"
-			filename = str(time.time()) + ".jpg"
+			filename = "jtail" + str(time.time()) + ".jpg"
 			image_to_save = array2image(img1)
 			image_to_save.save(path+filename)	
 
 		if reply == "OHEAD":
 			img1 = cv2.imread('temp.png')
 			path = "../coin_images/oheads/"
-			filename = str(time.time()) + ".jpg"
+			filename = 'ohead' + str(time.time()) + ".jpg"
 			image_to_save = array2image(img1)
 			image_to_save.save(path+filename)
 
@@ -1435,7 +1446,7 @@ if __name__=="__main__":
 		if reply == "OTAIL":
 			img1 = cv2.imread('temp.png')
 			path = "../coin_images/otails/"
-			filename = str(time.time()) + ".jpg"
+			filename = 'otail' + str(time.time()) + ".jpg"
 			image_to_save = array2image(img1)
 			image_to_save.save(path+filename)
 
@@ -1462,7 +1473,7 @@ if __name__=="__main__":
 			#img1 = preprocess_img(img1)
 			#cv2.imwrite('postprocessed_img.png', img1)
 			#predicted_classID = predict_class(img1)
-			predicted_classID = predict_class_360(img1, step360=15)
+			predicted_classID = predict_class_360(img1, step360=40)
 			if predicted_classID == 1: answer = "Jefferson HEADS"
 			if predicted_classID == 2: answer = "Monticello TAILS"
 			if predicted_classID == 3: answer = "Other HEADS"

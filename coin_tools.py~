@@ -6,7 +6,7 @@ import ImageStat
 import ImageFilter
 import math, operator
 import sys
-import cv2
+import cv, cv2
 import Image
 import numpy as np
 import scipy.spatial
@@ -657,7 +657,7 @@ def rotate_image(img, degrees):
 
 
 ###########################################################
-
+#expects gray scale image array type
 def find_center_of_coin(img):
 	#create storage fo circle data
 	storage = cv.CreateMat(50, 1, cv.CV_32FC3)
@@ -667,7 +667,7 @@ def find_center_of_coin(img):
 	img_copy = cv.CloneImage(img)
 	edges = cv.CreateImage(cv.GetSize(img), 8, 1)
 	#print edges, img
-	cv.Smooth(img , edges , cv.CV_GAUSSIAN,3, 3)
+	#cv.Smooth(img , edges , cv.CV_GAUSSIAN,3, 3)
 	#cv.Canny(edges, edges, 50, 100, 3)
 	#cv.Smooth(edges, edges, cv.CV_GAUSSIAN, 3, 3)
 	img_copy2 = cv.CloneImage(img_copy)
